@@ -1,0 +1,247 @@
+.course-setup {
+  max-width: 1200px;
+}
+
+.course-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.course-name {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.course-name h3 {
+  margin: 0;
+  color: #667eea;
+}
+
+.course-name-edit {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.course-name-edit input {
+  padding: 0.5rem;
+  border: 2px solid #667eea;
+  border-radius: 4px;
+  font-size: 1rem;
+  min-width: 200px;
+}
+
+.course-stats {
+  display: flex;
+  justify-content: space-around;
+  gap: 2rem;
+  padding: 1rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stat-label {
+  color: #666;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.holes-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.holes-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #667eea;
+  color: white;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.hole-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.hole-row:hover {
+  background: #e9ecef;
+}
+
+.hole-number {
+  font-weight: 600;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.hole-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.hole-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.info-box {
+  background: #e7f3ff;
+  border-left: 4px solid #2196F3;
+}
+
+.info-box h4 {
+  color: #1976D2;
+  margin-bottom: 0.5rem;
+}
+
+.info-box p {
+  color: #555;
+  line-height: 1.6;
+}
+
+/* Quick Actions */
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+/* Saved Courses List */
+.saved-courses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1rem 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.saved-course-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  gap: 1rem;
+}
+
+.saved-course-item h4 {
+  margin: 0 0 0.25rem 0;
+  color: #333;
+}
+
+.saved-course-item p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.saved-course-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Templates Grid */
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.template-card {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  text-align: center;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.template-card:hover {
+  border-color: #667eea;
+  background: #fff;
+}
+
+.template-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.template-card p {
+  margin: 0 0 1rem 0;
+  color: #667eea;
+  font-weight: 600;
+}
+
+/* Format List */
+.format-list {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+  color: #666;
+}
+
+.format-list li {
+  margin: 0.5rem 0;
+  font-family: monospace;
+}
+
+@media (max-width: 768px) {
+  .holes-container {
+    grid-template-columns: 1fr;
+  }
+
+  .course-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .course-stats {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .table-header,
+  .hole-row {
+    grid-template-columns: 60px 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+}

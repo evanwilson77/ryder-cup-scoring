@@ -1,0 +1,296 @@
+.scoring {
+  max-width: 1000px;
+}
+
+.scoring-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.match-status {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.status-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.scoring-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.hole-info h3 {
+  font-size: 2rem;
+  color: #667eea;
+  margin: 0 0 1rem 0;
+}
+
+.hole-details {
+  display: flex;
+  gap: 2rem;
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail .label {
+  font-size: 0.85rem;
+  color: #666;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.detail .value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.match-progress h4 {
+  margin: 0 0 1rem 0;
+}
+
+.progress-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.score-status {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.holes-info {
+  color: #666;
+}
+
+.score-entry h3 {
+  margin-bottom: 1.5rem;
+}
+
+.singles-scoring,
+.foursomes-scoring,
+.fourball-scoring {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.team-score-section {
+  border-top: 4px solid;
+  padding-top: 1rem;
+}
+
+.team-score-section h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.3rem;
+}
+
+.team-players {
+  color: #666;
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+.player-score {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.player-score label {
+  font-weight: 500;
+  color: #555;
+}
+
+.player-score input {
+  padding: 0.75rem;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 1.2rem;
+  text-align: center;
+  font-weight: bold;
+}
+
+.player-score input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+/* Score Controls with +/- Buttons */
+.score-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.score-button {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  border: 2px solid #667eea;
+  background: white;
+  color: #667eea;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.score-button:hover {
+  background: #667eea;
+  color: white;
+  transform: scale(1.05);
+}
+
+.score-button:active {
+  transform: scale(0.95);
+}
+
+.score-button.decrement {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.score-button.decrement:hover {
+  background: #dc3545;
+  color: white;
+}
+
+.score-button.increment {
+  border-color: #28a745;
+  color: #28a745;
+}
+
+.score-button.increment:hover {
+  background: #28a745;
+  color: white;
+}
+
+.score-input {
+  width: 80px;
+  padding: 0.75rem;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 1.5rem;
+  text-align: center;
+  font-weight: bold;
+}
+
+.score-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.scoring-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.scoring-actions button {
+  flex: 1;
+}
+
+.score-history h3 {
+  margin-bottom: 1rem;
+}
+
+.holes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.75rem;
+}
+
+.hole-result {
+  padding: 0.75rem;
+  border-radius: 4px;
+  text-align: center;
+  border: 2px solid;
+}
+
+.hole-result.team1-win {
+  background: #fee;
+  border-color: #DC2626;
+}
+
+.hole-result.team2-win {
+  background: #eef;
+  border-color: #2563EB;
+}
+
+.hole-result.halved {
+  background: #f5f5f5;
+  border-color: #999;
+}
+
+.hole-result .hole-number {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.hole-result .hole-winner {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .scoring-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .singles-scoring,
+  .foursomes-scoring,
+  .fourball-scoring {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .scoring-actions {
+    flex-direction: column;
+  }
+
+  .holes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
+  /* Mobile-optimized score controls */
+  .score-button {
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+  }
+
+  .score-input {
+    width: 100px;
+    font-size: 2rem;
+  }
+
+  .score-controls {
+    gap: 1rem;
+  }
+}

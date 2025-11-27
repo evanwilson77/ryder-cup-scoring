@@ -1,0 +1,205 @@
+.match-setup {
+  max-width: 1200px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.matches-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.match-card {
+  transition: transform 0.2s;
+}
+
+.match-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.match-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.match-header h3 {
+  margin: 0 0 0.5rem 0;
+}
+
+.match-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.format-badge {
+  display: inline-block;
+  background: #667eea;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-badge.not-started {
+  background: #e9ecef;
+  color: #6c757d;
+}
+
+.status-badge.in-progress {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.completed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.match-details {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.team-lineup {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+.team-side {
+  border-left: 4px solid;
+  padding-left: 1rem;
+}
+
+.team-side h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.1rem;
+}
+
+.team-side ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.team-side li {
+  padding: 0.5rem 0;
+  color: #555;
+}
+
+.vs {
+  font-weight: bold;
+  color: #999;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+/* Modal for creating match */
+.modal.large {
+  max-width: 800px;
+}
+
+.player-selection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin: 1.5rem 0;
+}
+
+.team-selection h4 {
+  margin-bottom: 0.5rem;
+}
+
+.selection-hint {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+.player-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.player-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.player-checkbox:hover {
+  background: #e9ecef;
+}
+
+.player-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.player-checkbox span {
+  flex: 1;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .team-lineup {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .vs {
+    text-align: center;
+    padding: 1rem 0;
+  }
+
+  .player-selection {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .match-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .match-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .match-actions button {
+    width: 100%;
+  }
+}
