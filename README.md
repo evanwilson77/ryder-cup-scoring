@@ -1,5 +1,5 @@
 # Ryder Cup Scoring App
-
+By Evan Wilson
 A real-time golf tournament scoring application built for Ryder Cup format competitions, featuring live scoring, match play formats, and handicap calculations.
 
 ## Features

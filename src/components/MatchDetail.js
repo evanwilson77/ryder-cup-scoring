@@ -37,7 +37,7 @@ function MatchDetail() {
   const team1 = teams.find(t => t.id === 'team1');
   const team2 = teams.find(t => t.id === 'team2');
   const getPlayer = (playerId) => players.find(p => p.id === playerId);
-  const matchStatus = calculateMatchStatus(match.holeScores);
+  const matchStatus = calculateMatchStatus(match.holeScores, 18, team1?.name, team2?.name);
 
   const getHoleWinnerText = (holeScore) => {
     if (!holeScore || !holeScore.winner) return '-';

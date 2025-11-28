@@ -5,7 +5,7 @@ import {
   subscribeToMatches,
   subscribeToPlayers
 } from '../firebase/services';
-import { calculateTournamentPoints, calculateMatchStatus, getMatchResult } from '../utils/scoring';
+import { calculateTournamentPoints, calculateMatchStatus, getProvisionalResult } from '../utils/scoring';
 import './Leaderboard.css';
 
 function Leaderboard() {
@@ -39,7 +39,7 @@ function Leaderboard() {
 
     const inProgressMatches = matches.filter(m => m.status === 'in_progress');
     inProgressMatches.forEach(match => {
-      const projectedResult = getMatchResult(match.holeScores);
+      const projectedResult = getProvisionalResult(match.holeScores);
       if (projectedResult === 'team1_win') {
         team1Projected += 1;
       } else if (projectedResult === 'team2_win') {
@@ -85,10 +85,15 @@ function Leaderboard() {
         <div className="score-display">
           <div className="team-score" style={{ backgroundColor: team1?.color }}>
             <div className="team-name">{team1?.name || 'Team 1'}</div>
-            <div className="team-points">{team1Points}</div>
-            {inProgressMatches.length > 0 && team1Projected !== team1Points && (
-              <div className="projected-points">
-                Projected: {team1Projected}
+            <div className="team-points">
+              {team1Points}
+              {team1Projected !== team1Points && (
+                <span className="provisional-score"> ({team1Projected})</span>
+              )}
+            </div>
+            {inProgressMatches.length > 0 && (
+              <div className="score-legend">
+                Actual {team1Projected !== team1Points && '(Provisional)'}
               </div>
             )}
           </div>
@@ -99,10 +104,15 @@ function Leaderboard() {
 
           <div className="team-score" style={{ backgroundColor: team2?.color }}>
             <div className="team-name">{team2?.name || 'Team 2'}</div>
-            <div className="team-points">{team2Points}</div>
-            {inProgressMatches.length > 0 && team2Projected !== team2Points && (
-              <div className="projected-points">
-                Projected: {team2Projected}
+            <div className="team-points">
+              {team2Points}
+              {team2Projected !== team2Points && (
+                <span className="provisional-score"> ({team2Projected})</span>
+              )}
+            </div>
+            {inProgressMatches.length > 0 && (
+              <div className="score-legend">
+                Actual {team2Projected !== team2Points && '(Provisional)'}
               </div>
             )}
           </div>
@@ -133,8 +143,8 @@ function Leaderboard() {
           <h3>Live Matches</h3>
           <div className="matches-list">
             {inProgressMatches.map(match => {
-              const matchStatus = calculateMatchStatus(match.holeScores);
-              const projectedResult = getMatchResult(match.holeScores);
+              const matchStatus = calculateMatchStatus(match.holeScores, 18, team1?.name, team2?.name);
+              const projectedResult = getProvisionalResult(match.holeScores);
 
               return (
                 <div key={match.id} className="match-item live">

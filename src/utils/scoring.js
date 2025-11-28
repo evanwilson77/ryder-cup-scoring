@@ -4,7 +4,7 @@
  * Calculate match status and score differential
  * Returns the number of holes up and holes remaining
  */
-export const calculateMatchStatus = (holeScores, currentHole = 18) => {
+export const calculateMatchStatus = (holeScores, currentHole = 18, team1Name = 'Team 1', team2Name = 'Team 2') => {
   let team1Up = 0;
   let holesPlayed = 0;
 
@@ -29,20 +29,20 @@ export const calculateMatchStatus = (holeScores, currentHole = 18) => {
     holesPlayed,
     holesRemaining,
     isComplete,
-    status: getMatchStatusText(team1Up, holesRemaining, isComplete)
+    status: getMatchStatusText(team1Up, holesRemaining, isComplete, team1Name, team2Name)
   };
 };
 
 /**
  * Get match status text (e.g., "2 UP", "3&2", "AS")
  */
-export const getMatchStatusText = (differential, holesRemaining, isComplete) => {
+export const getMatchStatusText = (differential, holesRemaining, isComplete, team1Name = 'Team 1', team2Name = 'Team 2') => {
   if (differential === 0) {
     return isComplete ? 'AS' : 'AS'; // All Square
   }
 
   const absDiff = Math.abs(differential);
-  const leader = differential > 0 ? 'Team 1' : 'Team 2';
+  const leader = differential > 0 ? team1Name : team2Name;
 
   if (isComplete && holesRemaining > 0) {
     // Match ended early (e.g., "3&2" means 3 up with 2 to play)
@@ -171,6 +171,22 @@ export const getMatchResult = (holeScores) => {
   if (!status.isComplete) {
     return null;
   }
+
+  if (status.team1Up > 0) {
+    return 'team1_win';
+  } else if (status.team1Up < 0) {
+    return 'team2_win';
+  } else {
+    return 'halved';
+  }
+};
+
+/**
+ * Get provisional match result from hole scores (for in-progress matches)
+ * Returns who would win if the match ended now
+ */
+export const getProvisionalResult = (holeScores) => {
+  const status = calculateMatchStatus(holeScores);
 
   if (status.team1Up > 0) {
     return 'team1_win';

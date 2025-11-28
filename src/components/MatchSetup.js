@@ -123,6 +123,31 @@ function MatchSetup() {
     }
   };
 
+  // Get players who are already in scheduled or in-progress singles matches
+  const getPlayersInActiveSinglesMatches = () => {
+    const activeSinglesMatches = matches.filter(
+      m => (m.status === 'not_started' || m.status === 'in_progress') && m.format === 'singles'
+    );
+
+    const playerIds = new Set();
+    activeSinglesMatches.forEach(match => {
+      match.team1Players.forEach(id => playerIds.add(id));
+      match.team2Players.forEach(id => playerIds.add(id));
+    });
+
+    return playerIds;
+  };
+
+  // Check if a player is available for selection (only for singles matches)
+  const isPlayerAvailable = (playerId) => {
+    if (newMatch.format !== 'singles') {
+      return true; // No restrictions for foursomes/fourball
+    }
+
+    const playersInActiveSingles = getPlayersInActiveSinglesMatches();
+    return !playersInActiveSingles.has(playerId);
+  };
+
   const team1 = teams.find(t => t.id === 'team1');
   const team2 = teams.find(t => t.id === 'team2');
   const team1Players = getTeamPlayers('team1');
@@ -242,16 +267,27 @@ function MatchSetup() {
                     Select {newMatch.format === 'singles' ? '1 player' : '2 players'}
                   </p>
                   <div className="player-checkboxes">
-                    {team1Players.map(player => (
-                      <label key={player.id} className="player-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={newMatch.team1Players.includes(player.id)}
-                          onChange={() => handlePlayerSelect('team1', player.id)}
-                        />
-                        <span>{player.name} (HCP: {player.handicap})</span>
-                      </label>
-                    ))}
+                    {team1Players.map(player => {
+                      const available = isPlayerAvailable(player.id);
+                      return (
+                        <label
+                          key={player.id}
+                          className={`player-checkbox ${!available ? 'disabled' : ''}`}
+                          title={!available ? 'Player is already scheduled in another singles match' : ''}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={newMatch.team1Players.includes(player.id)}
+                            onChange={() => handlePlayerSelect('team1', player.id)}
+                            disabled={!available}
+                          />
+                          <span>
+                            {player.name} (HCP: {player.handicap})
+                            {!available && <span className="unavailable-badge">In Match</span>}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -261,16 +297,27 @@ function MatchSetup() {
                     Select {newMatch.format === 'singles' ? '1 player' : '2 players'}
                   </p>
                   <div className="player-checkboxes">
-                    {team2Players.map(player => (
-                      <label key={player.id} className="player-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={newMatch.team2Players.includes(player.id)}
-                          onChange={() => handlePlayerSelect('team2', player.id)}
-                        />
-                        <span>{player.name} (HCP: {player.handicap})</span>
-                      </label>
-                    ))}
+                    {team2Players.map(player => {
+                      const available = isPlayerAvailable(player.id);
+                      return (
+                        <label
+                          key={player.id}
+                          className={`player-checkbox ${!available ? 'disabled' : ''}`}
+                          title={!available ? 'Player is already scheduled in another singles match' : ''}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={newMatch.team2Players.includes(player.id)}
+                            onChange={() => handlePlayerSelect('team2', player.id)}
+                            disabled={!available}
+                          />
+                          <span>
+                            {player.name} (HCP: {player.handicap})
+                            {!available && <span className="unavailable-badge">In Match</span>}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

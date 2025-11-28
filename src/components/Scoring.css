@@ -23,6 +23,67 @@
   color: #667eea;
 }
 
+/* Mini Leaderboard */
+.mini-leaderboard {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.mini-leaderboard h4 {
+  color: white;
+  margin: 0 0 1rem 0;
+  text-align: center;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.9;
+}
+
+.mini-score-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.mini-team-score {
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  min-width: 120px;
+}
+
+.mini-team-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mini-team-points {
+  font-size: 2rem;
+  font-weight: bold;
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.mini-provisional {
+  font-size: 1.2rem;
+  opacity: 0.7;
+  font-weight: normal;
+}
+
+.mini-score-divider {
+  font-size: 1.5rem;
+  font-weight: bold;
+  opacity: 0.7;
+}
+
 .scoring-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -215,50 +276,143 @@
   flex: 1;
 }
 
-.score-history h3 {
+.score-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.holes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 0.75rem;
+.score-history-header h3 {
+  margin: 0;
 }
 
-.hole-result {
-  padding: 0.75rem;
-  border-radius: 4px;
-  text-align: center;
-  border: 2px solid;
-}
-
-.hole-result.team1-win {
-  background: #fee;
-  border-color: #DC2626;
-}
-
-.hole-result.team2-win {
-  background: #eef;
-  border-color: #2563EB;
-}
-
-.hole-result.halved {
-  background: #f5f5f5;
-  border-color: #999;
-}
-
-.hole-result .hole-number {
+.viewing-past-notice {
   font-size: 0.85rem;
-  color: #666;
-  margin-bottom: 0.25rem;
+  color: #ffc107;
+  background: #fff9e6;
+  padding: 0.35rem 0.75rem;
+  border-radius: 12px;
+  font-weight: 600;
+  border: 1px solid #ffc107;
 }
 
-.hole-result .hole-winner {
+.score-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.hole-detail {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 2px solid;
+  background: white;
+}
+
+.hole-detail.team1-win {
+  border-color: #DC2626;
+  background: #fff5f5;
+}
+
+.hole-detail.team2-win {
+  border-color: #2563EB;
+  background: #f0f5ff;
+}
+
+.hole-detail.halved {
+  border-color: #999;
+  background: #f9f9f9;
+}
+
+.hole-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.hole-title {
+  font-size: 1rem;
+  color: #333;
+}
+
+.hole-result-badge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.hole-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.player-hole-score {
+  padding: 0.5rem;
+  padding-left: 0.75rem;
+  border-left: 4px solid;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+}
+
+.score-team {
   font-weight: 600;
   font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  color: #333;
+}
+
+.score-details {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.gross-score,
+.net-score,
+.stableford-score {
+  display: inline-block;
+}
+
+.stableford-score {
+  font-weight: 600;
+  color: #667eea;
 }
 
 @media (max-width: 768px) {
+  .mini-score-display {
+    flex-direction: row;
+    gap: 0.75rem;
+  }
+
+  .mini-team-score {
+    padding: 0.5rem 1rem;
+    min-width: 100px;
+  }
+
+  .mini-team-name {
+    font-size: 0.75rem;
+  }
+
+  .mini-team-points {
+    font-size: 1.5rem;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .mini-provisional {
+    font-size: 1rem;
+  }
+
   .scoring-grid {
     grid-template-columns: 1fr;
   }
@@ -274,8 +428,15 @@
     flex-direction: column;
   }
 
-  .holes-grid {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  .hole-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .score-details {
+    flex-direction: column;
+    gap: 0.25rem;
   }
 
   /* Mobile-optimized score controls */

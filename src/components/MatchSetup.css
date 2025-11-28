@@ -171,6 +171,32 @@
 .player-checkbox span {
   flex: 1;
   color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.player-checkbox.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f1f1f1;
+}
+
+.player-checkbox.disabled:hover {
+  background: #f1f1f1;
+}
+
+.player-checkbox.disabled input[type="checkbox"] {
+  cursor: not-allowed;
+}
+
+.unavailable-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  background: #ffc107;
+  color: #333;
+  border-radius: 10px;
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {
