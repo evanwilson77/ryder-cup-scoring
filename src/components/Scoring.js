@@ -48,7 +48,7 @@ function Scoring() {
     };
   }, [matchId]);
 
-  // Initialize scores with par values when hole changes, or load existing scores if already recorded
+  // Initialize scores when hole changes - blank for new holes, load existing scores if already recorded
   useEffect(() => {
     if (match && holes.length > 0) {
       const currentHoleData = holes.find(h => h.number === currentHole);
@@ -58,35 +58,22 @@ function Scoring() {
       if (currentHoleData) {
         const loadedScores = {};
 
-        // Check if this hole already has scores recorded
-        if (existingHoleScore) {
+        // Only load scores if this hole has already been scored (has a winner)
+        if (existingHoleScore && existingHoleScore.winner !== undefined) {
           if (match.format === 'singles') {
-            loadedScores.team1Player1 = existingHoleScore.team1Gross || existingHoleScore.team1Player1 || currentHoleData.par;
-            loadedScores.team2Player1 = existingHoleScore.team2Gross || existingHoleScore.team2Player1 || currentHoleData.par;
+            loadedScores.team1Player1 = existingHoleScore.team1Gross || existingHoleScore.team1Player1;
+            loadedScores.team2Player1 = existingHoleScore.team2Gross || existingHoleScore.team2Player1;
           } else if (match.format === 'foursomes') {
-            loadedScores.team1Score = existingHoleScore.team1Gross || existingHoleScore.team1Score || currentHoleData.par;
-            loadedScores.team2Score = existingHoleScore.team2Gross || existingHoleScore.team2Score || currentHoleData.par;
+            loadedScores.team1Score = existingHoleScore.team1Gross || existingHoleScore.team1Score;
+            loadedScores.team2Score = existingHoleScore.team2Gross || existingHoleScore.team2Score;
           } else if (match.format === 'fourball') {
-            loadedScores.team1Player1 = existingHoleScore.team1Player1Gross || existingHoleScore.team1Player1 || currentHoleData.par;
-            loadedScores.team1Player2 = existingHoleScore.team1Player2Gross || existingHoleScore.team1Player2 || currentHoleData.par;
-            loadedScores.team2Player1 = existingHoleScore.team2Player1Gross || existingHoleScore.team2Player1 || currentHoleData.par;
-            loadedScores.team2Player2 = existingHoleScore.team2Player2Gross || existingHoleScore.team2Player2 || currentHoleData.par;
-          }
-        } else {
-          // Default to par if no existing scores
-          if (match.format === 'singles') {
-            loadedScores.team1Player1 = currentHoleData.par;
-            loadedScores.team2Player1 = currentHoleData.par;
-          } else if (match.format === 'foursomes') {
-            loadedScores.team1Score = currentHoleData.par;
-            loadedScores.team2Score = currentHoleData.par;
-          } else if (match.format === 'fourball') {
-            loadedScores.team1Player1 = currentHoleData.par;
-            loadedScores.team1Player2 = currentHoleData.par;
-            loadedScores.team2Player1 = currentHoleData.par;
-            loadedScores.team2Player2 = currentHoleData.par;
+            loadedScores.team1Player1 = existingHoleScore.team1Player1Gross || existingHoleScore.team1Player1;
+            loadedScores.team1Player2 = existingHoleScore.team1Player2Gross || existingHoleScore.team1Player2;
+            loadedScores.team2Player1 = existingHoleScore.team2Player1Gross || existingHoleScore.team2Player1;
+            loadedScores.team2Player2 = existingHoleScore.team2Player2Gross || existingHoleScore.team2Player2;
           }
         }
+        // Otherwise leave scores empty (blank) for new holes
         setScores(loadedScores);
       }
     }
@@ -112,14 +99,14 @@ function Scoring() {
   const incrementScore = (field) => {
     setScores({
       ...scores,
-      [field]: (scores[field] || 0) + 1
+      [field]: scores[field] ? scores[field] + 1 : currentHoleData.par + 1
     });
   };
 
   const decrementScore = (field) => {
     setScores({
       ...scores,
-      [field]: Math.max(1, (scores[field] || 0) - 1)
+      [field]: scores[field] ? Math.max(1, scores[field] - 1) : Math.max(1, currentHoleData.par - 1)
     });
   };
 
