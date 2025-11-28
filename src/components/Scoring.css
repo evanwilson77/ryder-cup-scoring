@@ -144,6 +144,63 @@
   margin-bottom: 1.5rem;
 }
 
+/* Dynamic Hole Result Indicator */
+.dynamic-result {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-radius: 12px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  animation: slideIn 0.3s ease-out;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dynamic-result.team1-winning {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 3px solid #DC2626;
+  color: #991b1b;
+}
+
+.dynamic-result.team2-winning {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 3px solid #2563EB;
+  color: #1e40af;
+}
+
+.dynamic-result.hole-halved {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 3px solid #f59e0b;
+  color: #92400e;
+}
+
+.result-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.result-text {
+  font-size: 1.3rem;
+}
+
+.result-text strong {
+  font-weight: 700;
+}
+
 .singles-scoring,
 .foursomes-scoring,
 .fourball-scoring {
@@ -453,5 +510,22 @@
 
   .score-controls {
     gap: 1rem;
+  }
+
+  /* Mobile-optimized dynamic result */
+  .dynamic-result {
+    padding: 1rem;
+    font-size: 1.1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .result-icon {
+    font-size: 1.5rem;
+  }
+
+  .result-text {
+    font-size: 1.1rem;
+    text-align: center;
   }
 }

@@ -123,6 +123,72 @@ function Scoring() {
     });
   };
 
+  // Calculate dynamic hole result as scores are entered
+  const getDynamicHoleResult = () => {
+    if (!currentHoleData || !scores) return null;
+
+    try {
+      if (match.format === 'singles') {
+        const player1 = getPlayer(match.team1Players[0]);
+        const player2 = getPlayer(match.team2Players[0]);
+
+        if (!scores.team1Player1 || !scores.team2Player1) return null;
+
+        const team1Net = calculateNetScore(
+          scores.team1Player1,
+          player1?.handicap || 0,
+          currentHoleData.strokeIndex
+        );
+        const team2Net = calculateNetScore(
+          scores.team2Player1,
+          player2?.handicap || 0,
+          currentHoleData.strokeIndex
+        );
+
+        return determineHoleWinner(match.format, { team1Player1: team1Net, team2Player1: team2Net }, currentHoleData);
+      } else if (match.format === 'foursomes') {
+        if (!scores.team1Score || !scores.team2Score) return null;
+
+        const avgHandicap1 = (
+          (getPlayer(match.team1Players[0])?.handicap || 0) +
+          (getPlayer(match.team1Players[1])?.handicap || 0)
+        ) / 2;
+        const avgHandicap2 = (
+          (getPlayer(match.team2Players[0])?.handicap || 0) +
+          (getPlayer(match.team2Players[1])?.handicap || 0)
+        ) / 2;
+
+        const team1Net = calculateNetScore(scores.team1Score, avgHandicap1, currentHoleData.strokeIndex);
+        const team2Net = calculateNetScore(scores.team2Score, avgHandicap2, currentHoleData.strokeIndex);
+
+        return determineHoleWinner(match.format, { team1Score: team1Net, team2Score: team2Net }, currentHoleData);
+      } else if (match.format === 'fourball') {
+        if (!scores.team1Player1 || !scores.team1Player2 || !scores.team2Player1 || !scores.team2Player2) return null;
+
+        const player1a = getPlayer(match.team1Players[0]);
+        const player1b = getPlayer(match.team1Players[1]);
+        const player2a = getPlayer(match.team2Players[0]);
+        const player2b = getPlayer(match.team2Players[1]);
+
+        const team1P1Net = calculateNetScore(scores.team1Player1, player1a?.handicap || 0, currentHoleData.strokeIndex);
+        const team1P2Net = calculateNetScore(scores.team1Player2, player1b?.handicap || 0, currentHoleData.strokeIndex);
+        const team2P1Net = calculateNetScore(scores.team2Player1, player2a?.handicap || 0, currentHoleData.strokeIndex);
+        const team2P2Net = calculateNetScore(scores.team2Player2, player2b?.handicap || 0, currentHoleData.strokeIndex);
+
+        return determineHoleWinner(match.format, {
+          team1Player1: team1P1Net,
+          team1Player2: team1P2Net,
+          team2Player1: team2P1Net,
+          team2Player2: team2P2Net
+        }, currentHoleData);
+      }
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const dynamicResult = getDynamicHoleResult();
+
   const submitHoleScore = async () => {
     // Ensure we maintain the full array length - initialize with empty objects if needed
     const updatedHoleScores = Array.from({ length: 18 }, (_, i) => match.holeScores[i] || {});
@@ -444,6 +510,24 @@ function Scoring() {
 
       <div className="card score-entry">
         <h3>Enter Scores</h3>
+
+        {/* Dynamic hole result indicator */}
+        {dynamicResult && (
+          <div className={`dynamic-result ${dynamicResult === 'team1' ? 'team1-winning' : dynamicResult === 'team2' ? 'team2-winning' : 'hole-halved'}`}>
+            <div className="result-icon">
+              {dynamicResult === 'team1' ? '🔴' : dynamicResult === 'team2' ? '🔵' : '🟡'}
+            </div>
+            <div className="result-text">
+              {dynamicResult === 'team1' ? (
+                <><strong>{team1?.name}</strong> wins hole</>
+              ) : dynamicResult === 'team2' ? (
+                <><strong>{team2?.name}</strong> wins hole</>
+              ) : (
+                <>Hole <strong>Halved</strong></>
+              )}
+            </div>
+          </div>
+        )}
 
         {match.format === 'singles' && (
           <div className="singles-scoring">
