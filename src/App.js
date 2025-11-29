@@ -2,19 +2,24 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import './App.css';
 import { initializeDefaultData } from './firebase/services';
+import { initializeRegularPlayers } from './utils/initializePlayers';
 import TeamManagement from './components/TeamManagement';
 import CourseSetup from './components/CourseSetup';
 import MatchSetup from './components/MatchSetup';
 import Leaderboard from './components/Leaderboard';
 import Scoring from './components/Scoring';
 import MatchDetail from './components/MatchDetail';
+import PlayerManagement from './components/PlayerManagement';
 
 function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Initialize default data on app load
-    initializeDefaultData()
+    Promise.all([
+      initializeDefaultData(),
+      initializeRegularPlayers()
+    ])
       .then(() => {
         setLoading(false);
       })
@@ -41,6 +46,7 @@ function App() {
           <nav>
             <Link to="/">Leaderboard</Link>
             <Link to="/teams">Teams</Link>
+            <Link to="/players">Players</Link>
             <Link to="/course">Course</Link>
             <Link to="/matches">Matches</Link>
           </nav>
@@ -50,6 +56,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Leaderboard />} />
             <Route path="/teams" element={<TeamManagement />} />
+            <Route path="/players" element={<PlayerManagement />} />
             <Route path="/course" element={<CourseSetup />} />
             <Route path="/matches" element={<MatchSetup />} />
             <Route path="/scoring/:matchId" element={<Scoring />} />

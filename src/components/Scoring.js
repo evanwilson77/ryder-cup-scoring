@@ -99,14 +99,14 @@ function Scoring() {
   const incrementScore = (field) => {
     setScores({
       ...scores,
-      [field]: scores[field] ? scores[field] + 1 : currentHoleData.par + 1
+      [field]: scores[field] ? scores[field] + 1 : currentHoleData.par
     });
   };
 
   const decrementScore = (field) => {
     setScores({
       ...scores,
-      [field]: scores[field] ? Math.max(1, scores[field] - 1) : Math.max(1, currentHoleData.par - 1)
+      [field]: scores[field] ? Math.max(1, scores[field] - 1) : currentHoleData.par
     });
   };
 

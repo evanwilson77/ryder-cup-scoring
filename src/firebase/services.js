@@ -68,8 +68,15 @@ export const subscribeToTeams = (callback) => {
 
 // Player operations
 export const getPlayers = async () => {
-  const querySnapshot = await getDocs(collection(db, COLLECTIONS.PLAYERS));
+  const q = query(collection(db, COLLECTIONS.PLAYERS), orderBy('name'));
+  const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const getPlayer = async (playerId) => {
+  const docRef = doc(db, COLLECTIONS.PLAYERS, playerId);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
 };
 
 export const getPlayersByTeam = async (teamId) => {
@@ -78,13 +85,55 @@ export const getPlayersByTeam = async (teamId) => {
 };
 
 export const addPlayer = async (playerData) => {
-  const docRef = await addDoc(collection(db, COLLECTIONS.PLAYERS), playerData);
+  // Ensure handicap is stored as decimal number with 1 decimal place
+  const handicap = playerData.handicap ? parseFloat(parseFloat(playerData.handicap).toFixed(1)) : 0.0;
+
+  const playerWithDefaults = {
+    name: playerData.name,
+    handicap: handicap,
+    teamId: playerData.teamId || null,
+    handicapHistory: [{
+      handicap: handicap,
+      date: new Date().toISOString(),
+      tournamentId: playerData.tournamentId || null,
+      reason: 'Initial handicap'
+    }],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  const docRef = await addDoc(collection(db, COLLECTIONS.PLAYERS), playerWithDefaults);
   return docRef.id;
 };
 
 export const updatePlayer = async (playerId, playerData) => {
   const docRef = doc(db, COLLECTIONS.PLAYERS, playerId);
-  await updateDoc(docRef, playerData);
+
+  // If handicap is being updated, add to history
+  if (playerData.handicap !== undefined) {
+    const player = await getPlayer(playerId);
+    const newHandicap = parseFloat(parseFloat(playerData.handicap).toFixed(1));
+
+    // Only add to history if handicap actually changed
+    if (!player || player.handicap !== newHandicap) {
+      const historyEntry = {
+        handicap: newHandicap,
+        date: new Date().toISOString(),
+        tournamentId: playerData.tournamentId || null,
+        reason: playerData.handicapChangeReason || 'Manual update'
+      };
+
+      const updatedHistory = [...(player?.handicapHistory || []), historyEntry];
+      playerData.handicapHistory = updatedHistory;
+    }
+
+    playerData.handicap = newHandicap;
+  }
+
+  await updateDoc(docRef, {
+    ...playerData,
+    updatedAt: new Date().toISOString()
+  });
 };
 
 export const deletePlayer = async (playerId) => {
@@ -93,9 +142,19 @@ export const deletePlayer = async (playerId) => {
 };
 
 export const subscribeToPlayers = (callback) => {
-  return onSnapshot(collection(db, COLLECTIONS.PLAYERS), (snapshot) => {
+  const q = query(collection(db, COLLECTIONS.PLAYERS), orderBy('name'));
+  return onSnapshot(q, (snapshot) => {
     const players = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     callback(players);
+  });
+};
+
+export const subscribeToPlayer = (playerId, callback) => {
+  const docRef = doc(db, COLLECTIONS.PLAYERS, playerId);
+  return onSnapshot(docRef, (doc) => {
+    if (doc.exists()) {
+      callback({ id: doc.id, ...doc.data() });
+    }
   });
 };
 
