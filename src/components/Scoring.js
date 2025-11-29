@@ -28,6 +28,7 @@ function Scoring() {
   const [matches, setMatches] = useState([]);
   const [currentHole, setCurrentHole] = useState(1);
   const [scores, setScores] = useState({});
+  const [expandedHole, setExpandedHole] = useState(null);
 
   useEffect(() => {
     const unsubMatch = subscribeToMatch(matchId, (matchData) => {
@@ -809,52 +810,277 @@ function Scoring() {
         </div>
       </div>
 
-      {/* Score history */}
-      <div className="card score-history">
-        <div className="score-history-header">
-          <h3>Score History</h3>
-          {currentHole < match.currentHole && (
-            <div className="viewing-past-notice">
-              Viewing past hole - history shows submitted scores only
-            </div>
-          )}
-        </div>
-        <div className="score-history-list">
-          {match.holeScores.slice(0, match.currentHole - 1).map((holeScore, idx) => {
-            const details = getHoleScoreDetails(holeScore, idx + 1);
-            if (!details) return null;
+      {/* Scorecard View */}
+      <div className="card scorecard">
+        <h3>Scorecard</h3>
+        {currentHole < match.currentHole && (
+          <div className="viewing-past-notice">
+            Viewing past hole - scorecard shows completed holes only
+          </div>
+        )}
 
-            return (
-              <div
-                key={idx}
-                className={`hole-detail ${holeScore.winner === 'team1' ? 'team1-win' : holeScore.winner === 'team2' ? 'team2-win' : 'halved'}`}
-              >
-                <div className="hole-header">
-                  <div className="hole-title">
-                    <strong>Hole {idx + 1}</strong> (Par {details.hole.par}, SI {details.hole.strokeIndex})
-                  </div>
-                  <div className="hole-result-badge">
-                    {holeScore.winner === 'team1' ? team1?.name :
-                     holeScore.winner === 'team2' ? team2?.name :
-                     'Halved'}
-                  </div>
-                </div>
-                <div className="hole-scores">
-                  {details.scores.map((score, scoreIdx) => (
-                    <div key={scoreIdx} className="player-hole-score" style={{ borderLeftColor: scoreIdx === 0 ? team1?.color : team2?.color }}>
-                      <div className="score-team">{score.team}</div>
-                      <div className="score-details">
-                        <span className="gross-score">Gross: {score.gross}</span>
-                        <span className="net-score">Net: {score.net}</span>
-                        <span className="stableford-score">Stableford: {score.stableford}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+        {/* Front 9 */}
+        <div className="scorecard-nine">
+          <div className="scorecard-header">Front 9</div>
+          <table className="scorecard-table">
+            <thead>
+              <tr>
+                <th>Hole</th>
+                {holes.slice(0, 9).map((hole) => (
+                  <th key={hole.number}>{hole.number}</th>
+                ))}
+                <th className="total-col">OUT</th>
+              </tr>
+              <tr className="par-row">
+                <td>Par</td>
+                {holes.slice(0, 9).map((hole) => (
+                  <td key={hole.number}>{hole.par}</td>
+                ))}
+                <td className="total-col">{holes.slice(0, 9).reduce((sum, h) => sum + h.par, 0)}</td>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Team 1 / Player 1 */}
+              <tr className="score-row">
+                <td className="player-name" style={{ borderLeftColor: team1?.color }}>
+                  {match.format === 'singles' ? getPlayer(match.team1Players[0])?.name :
+                   match.format === 'foursomes' ? team1?.name :
+                   getPlayer(match.team1Players[0])?.name}
+                </td>
+                {holes.slice(0, 9).map((hole, idx) => {
+                  const holeScore = match.holeScores[idx];
+                  const gross = match.format === 'singles' ? holeScore?.team1Gross :
+                                match.format === 'foursomes' ? holeScore?.team1Gross :
+                                holeScore?.team1Player1Gross;
+                  const isWinner = holeScore?.winner === 'team1';
+                  const isHalved = holeScore?.winner === 'halved';
+
+                  return (
+                    <td
+                      key={hole.number}
+                      className={`score-cell ${gross ? (isWinner ? 'winner' : isHalved ? 'halved' : '') : 'empty'} ${idx + 1 === currentHole ? 'current' : ''}`}
+                      onClick={() => gross && setExpandedHole(expandedHole === idx + 1 ? null : idx + 1)}
+                      style={{ cursor: gross ? 'pointer' : 'default' }}
+                    >
+                      {gross || '-'}
+                    </td>
+                  );
+                })}
+                <td className="total-col">
+                  {match.holeScores.slice(0, 9).reduce((sum, hs) => {
+                    const gross = match.format === 'singles' ? hs?.team1Gross :
+                                  match.format === 'foursomes' ? hs?.team1Gross :
+                                  hs?.team1Player1Gross;
+                    return sum + (gross || 0);
+                  }, 0) || '-'}
+                </td>
+              </tr>
+
+              {/* Team 2 / Player 2 */}
+              <tr className="score-row">
+                <td className="player-name" style={{ borderLeftColor: team2?.color }}>
+                  {match.format === 'singles' ? getPlayer(match.team2Players[0])?.name :
+                   match.format === 'foursomes' ? team2?.name :
+                   getPlayer(match.team2Players[0])?.name}
+                </td>
+                {holes.slice(0, 9).map((hole, idx) => {
+                  const holeScore = match.holeScores[idx];
+                  const gross = match.format === 'singles' ? holeScore?.team2Gross :
+                                match.format === 'foursomes' ? holeScore?.team2Gross :
+                                holeScore?.team2Player1Gross;
+                  const isWinner = holeScore?.winner === 'team2';
+                  const isHalved = holeScore?.winner === 'halved';
+
+                  return (
+                    <td
+                      key={hole.number}
+                      className={`score-cell ${gross ? (isWinner ? 'winner' : isHalved ? 'halved' : '') : 'empty'} ${idx + 1 === currentHole ? 'current' : ''}`}
+                      onClick={() => gross && setExpandedHole(expandedHole === idx + 1 ? null : idx + 1)}
+                      style={{ cursor: gross ? 'pointer' : 'default' }}
+                    >
+                      {gross || '-'}
+                    </td>
+                  );
+                })}
+                <td className="total-col">
+                  {match.holeScores.slice(0, 9).reduce((sum, hs) => {
+                    const gross = match.format === 'singles' ? hs?.team2Gross :
+                                  match.format === 'foursomes' ? hs?.team2Gross :
+                                  hs?.team2Player1Gross;
+                    return sum + (gross || 0);
+                  }, 0) || '-'}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+
+        {/* Back 9 */}
+        <div className="scorecard-nine">
+          <div className="scorecard-header">Back 9</div>
+          <table className="scorecard-table">
+            <thead>
+              <tr>
+                <th>Hole</th>
+                {holes.slice(9, 18).map((hole) => (
+                  <th key={hole.number}>{hole.number}</th>
+                ))}
+                <th className="total-col">IN</th>
+                <th className="total-col">TOT</th>
+              </tr>
+              <tr className="par-row">
+                <td>Par</td>
+                {holes.slice(9, 18).map((hole) => (
+                  <td key={hole.number}>{hole.par}</td>
+                ))}
+                <td className="total-col">{holes.slice(9, 18).reduce((sum, h) => sum + h.par, 0)}</td>
+                <td className="total-col">{holes.reduce((sum, h) => sum + h.par, 0)}</td>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Team 1 / Player 1 */}
+              <tr className="score-row">
+                <td className="player-name" style={{ borderLeftColor: team1?.color }}>
+                  {match.format === 'singles' ? getPlayer(match.team1Players[0])?.name :
+                   match.format === 'foursomes' ? team1?.name :
+                   getPlayer(match.team1Players[0])?.name}
+                </td>
+                {holes.slice(9, 18).map((hole, idx) => {
+                  const holeIdx = idx + 9;
+                  const holeScore = match.holeScores[holeIdx];
+                  const gross = match.format === 'singles' ? holeScore?.team1Gross :
+                                match.format === 'foursomes' ? holeScore?.team1Gross :
+                                holeScore?.team1Player1Gross;
+                  const isWinner = holeScore?.winner === 'team1';
+                  const isHalved = holeScore?.winner === 'halved';
+
+                  return (
+                    <td
+                      key={hole.number}
+                      className={`score-cell ${gross ? (isWinner ? 'winner' : isHalved ? 'halved' : '') : 'empty'} ${holeIdx + 1 === currentHole ? 'current' : ''}`}
+                      onClick={() => gross && setExpandedHole(expandedHole === holeIdx + 1 ? null : holeIdx + 1)}
+                      style={{ cursor: gross ? 'pointer' : 'default' }}
+                    >
+                      {gross || '-'}
+                    </td>
+                  );
+                })}
+                <td className="total-col">
+                  {match.holeScores.slice(9, 18).reduce((sum, hs) => {
+                    const gross = match.format === 'singles' ? hs?.team1Gross :
+                                  match.format === 'foursomes' ? hs?.team1Gross :
+                                  hs?.team1Player1Gross;
+                    return sum + (gross || 0);
+                  }, 0) || '-'}
+                </td>
+                <td className="total-col">
+                  {match.holeScores.reduce((sum, hs) => {
+                    const gross = match.format === 'singles' ? hs?.team1Gross :
+                                  match.format === 'foursomes' ? hs?.team1Gross :
+                                  hs?.team1Player1Gross;
+                    return sum + (gross || 0);
+                  }, 0) || '-'}
+                </td>
+              </tr>
+
+              {/* Team 2 / Player 2 */}
+              <tr className="score-row">
+                <td className="player-name" style={{ borderLeftColor: team2?.color }}>
+                  {match.format === 'singles' ? getPlayer(match.team2Players[0])?.name :
+                   match.format === 'foursomes' ? team2?.name :
+                   getPlayer(match.team2Players[0])?.name}
+                </td>
+                {holes.slice(9, 18).map((hole, idx) => {
+                  const holeIdx = idx + 9;
+                  const holeScore = match.holeScores[holeIdx];
+                  const gross = match.format === 'singles' ? holeScore?.team2Gross :
+                                match.format === 'foursomes' ? holeScore?.team2Gross :
+                                holeScore?.team2Player1Gross;
+                  const isWinner = holeScore?.winner === 'team2';
+                  const isHalved = holeScore?.winner === 'halved';
+
+                  return (
+                    <td
+                      key={hole.number}
+                      className={`score-cell ${gross ? (isWinner ? 'winner' : isHalved ? 'halved' : '') : 'empty'} ${holeIdx + 1 === currentHole ? 'current' : ''}`}
+                      onClick={() => gross && setExpandedHole(expandedHole === holeIdx + 1 ? null : holeIdx + 1)}
+                      style={{ cursor: gross ? 'pointer' : 'default' }}
+                    >
+                      {gross || '-'}
+                    </td>
+                  );
+                })}
+                <td className="total-col">
+                  {match.holeScores.slice(9, 18).reduce((sum, hs) => {
+                    const gross = match.format === 'singles' ? hs?.team2Gross :
+                                  match.format === 'foursomes' ? hs?.team2Gross :
+                                  hs?.team2Player1Gross;
+                    return sum + (gross || 0);
+                  }, 0) || '-'}
+                </td>
+                <td className="total-col">
+                  {match.holeScores.reduce((sum, hs) => {
+                    const gross = match.format === 'singles' ? hs?.team2Gross :
+                                  match.format === 'foursomes' ? hs?.team2Gross :
+                                  hs?.team2Player1Gross;
+                    return sum + (gross || 0);
+                  }, 0) || '-'}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Expanded Hole Details */}
+        {expandedHole && match.holeScores[expandedHole - 1] && (
+          <div className="hole-detail-expanded">
+            <div className="detail-header">
+              <h4>Hole {expandedHole} Details</h4>
+              <button onClick={() => setExpandedHole(null)} className="close-detail">✕</button>
+            </div>
+            {(() => {
+              const details = getHoleScoreDetails(match.holeScores[expandedHole - 1], expandedHole);
+              if (!details) return null;
+
+              return (
+                <div className="detail-content">
+                  <div className="detail-hole-info">
+                    <span>Par {details.hole.par}</span>
+                    <span>•</span>
+                    <span>Stroke Index {details.hole.strokeIndex}</span>
+                    <span>•</span>
+                    <span className={`result-badge ${match.holeScores[expandedHole - 1].winner === 'team1' ? 'team1-win' : match.holeScores[expandedHole - 1].winner === 'team2' ? 'team2-win' : 'halved'}`}>
+                      {match.holeScores[expandedHole - 1].winner === 'team1' ? team1?.name :
+                       match.holeScores[expandedHole - 1].winner === 'team2' ? team2?.name :
+                       'Halved'}
+                    </span>
+                  </div>
+                  <div className="detail-scores">
+                    {details.scores.map((score, idx) => (
+                      <div key={idx} className="detail-score-card" style={{ borderTopColor: idx === 0 ? team1?.color : team2?.color }}>
+                        <div className="detail-team">{score.team}</div>
+                        <div className="detail-stats">
+                          <div className="stat">
+                            <span className="stat-label">Gross</span>
+                            <span className="stat-value">{score.gross}</span>
+                          </div>
+                          <div className="stat">
+                            <span className="stat-label">Net</span>
+                            <span className="stat-value">{score.net}</span>
+                          </div>
+                          <div className="stat">
+                            <span className="stat-label">Stableford</span>
+                            <span className="stat-value">{score.stableford}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </div>
     </div>
   );
