@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import './App.css';
 import { initializeDefaultData } from './firebase/services';
 import { initializeRegularPlayers } from './utils/initializePlayers';
+import { initializeTournamentSeries } from './firebase/tournamentServices';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import TeamManagement from './components/TeamManagement';
 import CourseSetup from './components/CourseSetup';
@@ -45,7 +46,8 @@ function AppContent() {
     // Initialize default data on app load
     Promise.all([
       initializeDefaultData(),
-      initializeRegularPlayers()
+      initializeRegularPlayers(),
+      initializeTournamentSeries()
     ])
       .then(() => {
         setLoading(false);
