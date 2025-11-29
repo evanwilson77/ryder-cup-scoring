@@ -49,6 +49,28 @@ body {
   background: rgba(255, 255, 255, 0.2);
 }
 
+.App-header nav .admin-login {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.App-header nav .admin-logout {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.App-header nav .admin-logout:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 .App-main {
   flex: 1;
   padding: 2rem;
