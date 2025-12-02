@@ -250,8 +250,6 @@ function ScoreCard({
 
     const holesUp = matchStatus.side1 - matchStatus.side2;
     const holesRemaining = 18 - (matchStatus.side1 + matchStatus.side2 + matchStatus.halved);
-    const front9Up = front9Status.side1 - front9Status.side2;
-    const back9Up = back9Status.side1 - back9Status.side2;
 
     return (
       <div className={`scorecard match-play ${compact ? 'compact' : ''} ${className}`}>

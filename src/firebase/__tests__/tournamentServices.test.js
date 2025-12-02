@@ -4,25 +4,6 @@
  */
 
 // Mock Firebase
-jest.mock('../config', () => ({
-  db: {}
-}));
-
-jest.mock('firebase/firestore', () => ({
-  collection: jest.fn(),
-  doc: jest.fn(),
-  getDocs: jest.fn(),
-  getDoc: jest.fn(),
-  addDoc: jest.fn(),
-  updateDoc: jest.fn(),
-  deleteDoc: jest.fn(),
-  onSnapshot: jest.fn(),
-  query: jest.fn(),
-  orderBy: jest.fn(),
-  where: jest.fn(),
-  limit: jest.fn()
-}));
-
 import {
   createTournament,
   updateTournament,
@@ -45,6 +26,25 @@ import {
   subscribeToTournamentSeries,
   subscribeToHonoursBoard
 } from '../tournamentServices';
+
+jest.mock('../config', () => ({
+  db: {}
+}));
+
+jest.mock('firebase/firestore', () => ({
+  collection: jest.fn(),
+  doc: jest.fn(),
+  getDocs: jest.fn(),
+  getDoc: jest.fn(),
+  addDoc: jest.fn(),
+  updateDoc: jest.fn(),
+  deleteDoc: jest.fn(),
+  onSnapshot: jest.fn(),
+  query: jest.fn(),
+  orderBy: jest.fn(),
+  where: jest.fn(),
+  limit: jest.fn()
+}));
 
 describe('Tournament Services', () => {
   beforeEach(() => {

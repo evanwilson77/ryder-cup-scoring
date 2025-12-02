@@ -143,10 +143,6 @@ function BestBallScoring() {
     }
   };
 
-  const handleQuickScore = (playerId, holeIndex, grossScore) => {
-    handleScoreChange(playerId, holeIndex, grossScore);
-  };
-
   const incrementScore = (playerId, holeIndex) => {
     const currentScore = playerScores[playerId]?.[holeIndex]?.grossScore;
     const newScore = increment(currentScore);
@@ -157,45 +153,6 @@ function BestBallScoring() {
     const currentScore = playerScores[playerId]?.[holeIndex]?.grossScore;
     const newScore = decrement(currentScore);
     handleScoreChange(playerId, holeIndex, newScore);
-  };
-
-  const calculateBestScore = (holeIndex) => {
-    const holeData = round?.courseData?.holes?.[holeIndex];
-    if (!holeData) return null;
-
-    let bestNetScore = null;
-    let bestPoints = null;
-    let bestPlayer = null;
-
-    // Best Ball handicap allowance: 90% for 2-person, 85% for 4-person
-    const handicapAllowance = teamPlayers.length <= 2 ? 0.90 : 0.85;
-
-    teamPlayers.forEach(player => {
-      const playerHole = playerScores[player.id]?.[holeIndex];
-      if (!playerHole?.grossScore) return;
-
-      // Apply handicap allowance for best ball format
-      const adjustedHandicap = (player.handicap || 0) * handicapAllowance;
-      const strokesReceived = calculateStrokesReceived(adjustedHandicap, holeData.strokeIndex);
-      const netScore = playerHole.grossScore - strokesReceived;
-
-      if (scoringFormat === 'stableford') {
-        const points = calculateStablefordPoints(netScore, holeData.par);
-        if (bestPoints === null || points > bestPoints) {
-          bestPoints = points;
-          bestPlayer = player.name;
-        }
-      } else {
-        if (bestNetScore === null || netScore < bestNetScore) {
-          bestNetScore = netScore;
-          bestPlayer = player.name;
-        }
-      }
-    });
-
-    return scoringFormat === 'stableford'
-      ? { points: bestPoints, player: bestPlayer }
-      : { netScore: bestNetScore, player: bestPlayer };
   };
 
   const calculateBestScoreWithScores = (holeIndex, scores) => {
@@ -325,8 +282,6 @@ function BestBallScoring() {
       </div>
     );
   }
-
-  const bestScore = calculateBestScore(currentHole);
 
   return (
     <div className="best-ball-scoring">

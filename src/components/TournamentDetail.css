@@ -664,8 +664,9 @@
 
 .progress-text {
   font-size: 0.875rem;
-  color: #718096;
-  font-weight: 600;
+  color: #334155;
+  font-weight: 700;
+  text-align: center;
 }
 
 .scorecard-scores {

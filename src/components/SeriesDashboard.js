@@ -21,6 +21,7 @@ function SeriesDashboard() {
 
   useEffect(() => {
     loadSeriesData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seriesId]);
 
   const loadSeriesData = async () => {

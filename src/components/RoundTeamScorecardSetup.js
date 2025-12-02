@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { XMarkIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import './RoundScorecardSetup.css';
 
 function RoundTeamScorecardSetup({ round, tournament, onSave, onClose }) {
   const [selectedTeams, setSelectedTeams] = useState(round.teamScorecards?.map(sc => sc.teamId) || []);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   const tournamentTeams = tournament.teams || [];
 

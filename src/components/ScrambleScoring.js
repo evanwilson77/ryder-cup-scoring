@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase/firebase';
+import { db } from '../firebase/config';
 import { subscribeToTournament } from '../firebase/tournamentServices';
 import { subscribeToPlayers } from '../firebase/services';
 import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline';
@@ -267,7 +267,7 @@ function ScrambleScoring() {
 
           <div className="header-info">
             <h1>{team.name}</h1>
-            <p className="tournament-info">{tournament.name} - Round {roundIndex + 1}</p>
+            <p className="tournament-info">{tournament.name} - Round {tournament.rounds.findIndex(r => r.id === roundId) + 1}</p>
             <div className="team-handicap">Team Handicap: {teamHandicap}</div>
           </div>
 

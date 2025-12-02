@@ -110,11 +110,6 @@ function CourseLibrary() {
     setEditingCourse({ ...editingCourse, holes: updatedHoles });
   };
 
-  const getTeeColorDisplay = (colorValue) => {
-    const tee = TEE_COLORS.find(t => t.value === colorValue);
-    return tee ? tee.label.split(' ')[0] : colorValue;
-  };
-
   if (loading) {
     return (
       <div className="course-library">

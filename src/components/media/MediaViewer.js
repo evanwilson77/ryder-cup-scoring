@@ -37,6 +37,7 @@ function MediaViewer({ media, allMedia = [], onClose, onDelete }) {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, allMedia.length]);
 
   const handlePrevious = () => {

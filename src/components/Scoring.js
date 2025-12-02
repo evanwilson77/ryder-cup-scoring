@@ -519,6 +519,7 @@ function Scoring() {
   const holesActuallyScored = match.holeScores.filter(h => h?.winner !== undefined).length;
   const matchStatus = calculateMatchStatus(match.holeScores, holesActuallyScored, team1?.name, team2?.name);
 
+  /*
   // Calculate Stableford points (net score relative to par)
   const calculateStableford = (netScore, par) => {
     if (!netScore || !par) return 0;
@@ -614,7 +615,7 @@ function Scoring() {
     }
 
     return details;
-  };
+  };*/
 
   // Calculate tournament standings
   const { team1Points, team2Points } = calculateTournamentPoints(matches);

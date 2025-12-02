@@ -19,6 +19,8 @@ import TournamentDetail from './components/TournamentDetail';
 import ScorecardScoring from './components/ScorecardScoring';
 import StablefordScoring from './components/StablefordScoring';
 import BestBallScoring from './components/BestBallScoring';
+import ScrambleScoring from './components/ScrambleScoring';
+import ShambleScoring from './components/ShambleScoring';
 import CourseLibrary from './components/CourseLibrary';
 import SeriesLeaderboard from './components/SeriesLeaderboard';
 import SeriesDashboard from './components/SeriesDashboard';
@@ -195,6 +197,9 @@ function AppContent() {
           <Route path="/tournaments/:tournamentId/rounds/:roundId/scorecards/:scorecardId" element={<ProtectedRoute><ScorecardScoring /></ProtectedRoute>} />
           <Route path="/tournaments/:tournamentId/rounds/:roundId/stableford/:scorecardId" element={<ProtectedRoute><StablefordScoring /></ProtectedRoute>} />
           <Route path="/tournaments/:tournamentId/rounds/:roundId/bestball/:teamId" element={<ProtectedRoute><BestBallScoring /></ProtectedRoute>} />
+          <Route path="/tournaments/:tournamentId/rounds/:roundId/team-stableford/:teamId" element={<ProtectedRoute><BestBallScoring /></ProtectedRoute>} />
+          <Route path="/tournaments/:tournamentId/rounds/:roundId/scramble/:teamId" element={<ProtectedRoute><ScrambleScoring /></ProtectedRoute>} />
+          <Route path="/tournaments/:tournamentId/rounds/:roundId/shamble/:teamId" element={<ProtectedRoute><ShambleScoring /></ProtectedRoute>} />
           <Route path="/course" element={<ProtectedRoute><CourseSetup /></ProtectedRoute>} />
           <Route path="/matches" element={<ProtectedRoute><MatchSetup /></ProtectedRoute>} />
           <Route path="/scoring/:matchId" element={<ProtectedRoute><Scoring /></ProtectedRoute>} />

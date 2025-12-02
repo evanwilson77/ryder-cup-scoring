@@ -16,12 +16,14 @@ function SeriesLeaderboard() {
 
   useEffect(() => {
     loadSeriesData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seriesId]);
 
   useEffect(() => {
     if (series && tournaments.length > 0 && players.length > 0) {
       calculateTournamentWinners();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [series, tournaments, players]);
 
   const loadSeriesData = async () => {
@@ -155,15 +157,6 @@ function SeriesLeaderboard() {
     if (position === 2) return '🥈';
     if (position === 3) return '🥉';
     return position;
-  };
-
-  const getOrdinalSuffix = (num) => {
-    const j = num % 10;
-    const k = num % 100;
-    if (j === 1 && k !== 11) return num + 'st';
-    if (j === 2 && k !== 12) return num + 'nd';
-    if (j === 3 && k !== 13) return num + 'rd';
-    return num + 'th';
   };
 
   if (loading) {

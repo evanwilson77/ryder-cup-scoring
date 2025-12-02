@@ -18,6 +18,7 @@ function RoundStartModal({ tournament, round, players, onStart, onClose }) {
   // Validate round configuration based on tournament format
   React.useEffect(() => {
     validateRoundConfiguration();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const validateRoundConfiguration = () => {

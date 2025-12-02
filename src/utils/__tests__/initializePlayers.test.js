@@ -4,6 +4,8 @@
  */
 
 // Mock Firebase
+import { initializeRegularPlayers } from '../initializePlayers';
+
 jest.mock('../../firebase/config', () => ({
   db: {}
 }));
@@ -15,8 +17,6 @@ jest.mock('firebase/firestore', () => ({
   query: jest.fn(),
   orderBy: jest.fn()
 }));
-
-import { initializeRegularPlayers } from '../initializePlayers';
 
 describe('Player Initialization', () => {
   beforeEach(() => {

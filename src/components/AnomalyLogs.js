@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,12 +11,7 @@ function AnomalyLogs() {
   const [timeRange, setTimeRange] = useState('7days');
   const { isAdmin } = useAuth();
 
-  useEffect(() => {
-    if (!isAdmin) return;
-    loadLogs();
-  }, [isAdmin, filter, timeRange]);
-
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     setLoading(true);
     try {
       let q = query(
@@ -60,7 +55,12 @@ function AnomalyLogs() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, timeRange]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    loadLogs();
+  }, [isAdmin, loadLogs]);
 
   const getSeverityColor = (severity) => {
     switch (severity) {

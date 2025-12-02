@@ -1098,7 +1098,18 @@ function TournamentDetail() {
                       <div className="scorecards-grid">
                         {selectedRound.teamScorecards.map((teamScorecard) => {
                           const team = tournament.teams?.find(t => t.id === teamScorecard.teamId);
-                          const holesCompleted = teamScorecard.holes?.filter(h => h.grossScore !== null).length || 0;
+
+                          // Calculate holes completed from playerScores
+                          let holesCompleted = 0;
+                          if (teamScorecard.playerScores) {
+                            // Count holes where at least one player has scored
+                            for (let i = 0; i < 18; i++) {
+                              const hasScore = Object.values(teamScorecard.playerScores).some(playerHoles =>
+                                playerHoles[i]?.grossScore !== null
+                              );
+                              if (hasScore) holesCompleted++;
+                            }
+                          }
                           const progress = (holesCompleted / 18) * 100;
 
                           return (
@@ -1128,8 +1139,18 @@ function TournamentDetail() {
                                     {team?.players?.length || 0} player{team?.players?.length !== 1 ? 's' : ''}
                                   </div>
                                 </div>
-                                <span className={`status-badge ${teamScorecard.status === 'completed' ? 'status-badge-completed' : teamScorecard.status === 'in_progress' ? 'status-badge-in-progress' : 'status-badge-setup'}`}>
-                                  {teamScorecard.status === 'completed' ? 'Completed' : teamScorecard.status === 'in_progress' ? 'In Progress' : 'Not Started'}
+                                <span className={`status-badge ${
+                                  teamScorecard.status === 'completed'
+                                    ? 'status-badge-completed'
+                                    : (holesCompleted > 0 && holesCompleted < 18) || teamScorecard.status === 'in_progress'
+                                      ? 'status-badge-in-progress'
+                                      : 'status-badge-setup'
+                                }`}>
+                                  {teamScorecard.status === 'completed'
+                                    ? 'Completed'
+                                    : (holesCompleted > 0 && holesCompleted < 18) || teamScorecard.status === 'in_progress'
+                                      ? 'In Progress'
+                                      : 'Not Started'}
                                 </span>
                               </div>
 

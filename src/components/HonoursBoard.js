@@ -35,6 +35,7 @@ function HonoursBoard() {
     if (selectedSeries) {
       loadHonoursData(selectedSeries);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSeries]);
 
   const loadHonoursData = async (seriesId) => {

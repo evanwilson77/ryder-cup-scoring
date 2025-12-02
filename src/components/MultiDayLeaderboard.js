@@ -34,6 +34,7 @@ function MultiDayLeaderboard() {
     if (tournament && players.length > 0) {
       calculateLeaderboard();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tournament, players, selectedView]);
 
   const calculateLeaderboard = () => {

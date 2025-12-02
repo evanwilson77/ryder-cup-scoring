@@ -5,8 +5,7 @@ import { db } from '../firebase/config';
 import {
   calculateHoleScore,
   calculateRoundScore,
-  formatScoreToPar,
-  getScoreDescription
+  formatScoreToPar
 } from '../utils/stablefordCalculations';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useAutoSave, useScoreEntry } from '../hooks';
@@ -98,12 +97,14 @@ function StablefordScoring() {
 
   useEffect(() => {
     loadScoringData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tournamentId, roundId, scorecardId]);
 
   useEffect(() => {
     if (scorecard && round?.courseData?.holes && player) {
       calculateRoundSummary();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scores, scorecard, round, player]);
 
   const loadScoringData = async () => {
@@ -184,14 +185,6 @@ function StablefordScoring() {
     const currentScore = scores[currentHole].grossScore;
     const newScore = decrement(currentScore);
     handleScoreChange(currentHole, newScore);
-  };
-
-  const handleQuickScore = (holeIndex, grossScore) => {
-    handleScoreChange(holeIndex, grossScore);
-    // Auto-advance to next hole
-    if (holeIndex < 17) {
-      setTimeout(() => setCurrentHole(holeIndex + 1), 300);
-    }
   };
 
   const getHoleScore = (holeIndex) => {

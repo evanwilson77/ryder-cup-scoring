@@ -195,7 +195,6 @@ function ScorecardScoring() {
     );
   }
 
-  const currentHoleScore = scorecard.holes[currentHole - 1];
   const isScorecardCompleted = scorecard.status === 'completed';
   const canEdit = isAdmin || !isScorecardCompleted;
 

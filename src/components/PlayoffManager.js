@@ -24,6 +24,7 @@ function PlayoffManager({ tournament, round, tiedPlayers, onClose, onComplete })
     if (playoffMethod === 'countback' && round && tiedPlayers.length > 0) {
       calculateCountback();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playoffMethod, countbackHoles, round, tiedPlayers]);
 
   const getPlayer = (playerId) => {

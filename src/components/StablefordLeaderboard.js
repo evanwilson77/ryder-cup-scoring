@@ -54,6 +54,7 @@ function StablefordLeaderboard() {
     if (selectedTournament && players.length > 0) {
       calculateLeaderboard();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTournament, players]);
 
   const calculateLeaderboard = () => {

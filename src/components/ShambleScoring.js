@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase/firebase';
+import { db } from '../firebase/config';
 import { subscribeToTournament } from '../firebase/tournamentServices';
 import { subscribeToPlayers } from '../firebase/services';
 import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline';

@@ -2,11 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   getTournamentSeries,
-  getTournaments,
   subscribeToTournaments,
   createTournamentSeries
 } from '../firebase/tournamentServices';
-import { PlusIcon, TrophyIcon, CalendarIcon, MapPinIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrophyIcon, CalendarIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import './TournamentDashboard.css';
 
 function TournamentDashboard() {
