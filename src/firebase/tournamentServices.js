@@ -117,13 +117,40 @@ export const getTournamentById = async (tournamentId) => {
 /**
  * Create a new tournament
  */
+// Helper function to remove undefined values from objects (Firebase doesn't accept undefined)
+const removeUndefined = (obj) => {
+  const cleaned = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === undefined) {
+      continue; // Skip undefined values
+    }
+
+    if (Array.isArray(value)) {
+      // Clean array elements
+      cleaned[key] = value.map(item => {
+        if (item && typeof item === 'object' && !Array.isArray(item)) {
+          return removeUndefined(item);
+        }
+        return item;
+      }).filter(item => item !== undefined);
+    } else if (value && typeof value === 'object' && value.constructor === Object) {
+      // Recursively clean nested objects
+      cleaned[key] = removeUndefined(value);
+    } else {
+      cleaned[key] = value;
+    }
+  }
+
+  return cleaned;
+};
+
 export const createTournament = async (tournamentData) => {
+  console.log('createTournament received:', JSON.stringify(tournamentData, null, 2));
+
+  // Build tournament object, only including fields that have values
   const tournamentWithDefaults = {
-    seriesId: tournamentData.seriesId,
     name: tournamentData.name,
-    edition: tournamentData.edition || null, // e.g., "2025" or "October 2025"
-    courseName: tournamentData.courseName,
-    courseId: tournamentData.courseId || null,
     startDate: tournamentData.startDate,
     endDate: tournamentData.endDate || tournamentData.startDate,
     format: tournamentData.format,
@@ -131,30 +158,64 @@ export const createTournament = async (tournamentData) => {
 
     // Participants
     players: tournamentData.players || [],
-    teams: tournamentData.teams || null, // For team formats
 
-    // Results
-    winner: tournamentData.winner || null,
-    winnerDetails: tournamentData.winnerDetails || null, // e.g., score, margin
-    results: tournamentData.results || [],
-
-    // Match data (for Ryder Cup format)
-    matches: tournamentData.matches || [],
-
-    // Scoring data (for Stableford/Stroke formats)
-    scorecards: tournamentData.scorecards || [],
+    // Rounds (NEW - array of round objects)
+    rounds: tournamentData.rounds || [],
 
     // Media
     photos: tournamentData.photos || [],
     videos: tournamentData.videos || [],
 
     // Metadata
-    notes: tournamentData.notes || '',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
 
-  const docRef = await addDoc(collection(db, COLLECTIONS.TOURNAMENTS), tournamentWithDefaults);
+  // Add optional fields only if they exist and are not empty
+  if (tournamentData.seriesId) {
+    tournamentWithDefaults.seriesId = tournamentData.seriesId;
+  }
+
+  if (tournamentData.edition) {
+    tournamentWithDefaults.edition = tournamentData.edition;
+  }
+
+  if (tournamentData.courseName) {
+    tournamentWithDefaults.courseName = tournamentData.courseName;
+  }
+
+  if (tournamentData.courseId) {
+    tournamentWithDefaults.courseId = tournamentData.courseId;
+  }
+
+  if (tournamentData.teams) {
+    tournamentWithDefaults.teams = tournamentData.teams;
+  }
+
+  if (tournamentData.winner) {
+    tournamentWithDefaults.winner = tournamentData.winner;
+  }
+
+  if (tournamentData.winnerDetails) {
+    tournamentWithDefaults.winnerDetails = tournamentData.winnerDetails;
+  }
+
+  if (tournamentData.results && tournamentData.results.length > 0) {
+    tournamentWithDefaults.results = tournamentData.results;
+  } else {
+    tournamentWithDefaults.results = [];
+  }
+
+  if (tournamentData.notes) {
+    tournamentWithDefaults.notes = tournamentData.notes;
+  }
+
+  // CRITICAL: Remove any undefined values that may have slipped through
+  const cleanedData = removeUndefined(tournamentWithDefaults);
+
+  console.log('About to save to Firebase:', JSON.stringify(cleanedData, null, 2));
+
+  const docRef = await addDoc(collection(db, COLLECTIONS.TOURNAMENTS), cleanedData);
   return docRef.id;
 };
 
@@ -167,6 +228,14 @@ export const updateTournament = async (tournamentId, tournamentData) => {
     ...tournamentData,
     updatedAt: new Date().toISOString()
   });
+};
+
+/**
+ * Delete a tournament
+ */
+export const deleteTournament = async (tournamentId) => {
+  const docRef = doc(db, COLLECTIONS.TOURNAMENTS, tournamentId);
+  await deleteDoc(docRef);
 };
 
 /**

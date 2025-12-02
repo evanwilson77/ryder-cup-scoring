@@ -65,7 +65,7 @@ export const extractCourseFromUrl = async (url) => {
  */
 export const parseScorecardText = (text) => {
   const holes = [];
-  const lines = text.split('\n');
+  // const lines = text.split('\n'); // Reserved for future line-by-line parsing
 
   // Try to find patterns like:
   // Hole 1: Par 4, SI 7

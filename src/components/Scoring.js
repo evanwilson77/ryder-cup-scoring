@@ -8,6 +8,7 @@ import {
   subscribeToMatches,
   updateMatch
 } from '../firebase/services';
+import { subscribeToTournament, updateTournament } from '../firebase/tournamentServices';
 import {
   calculateNetScore,
   determineHoleWinner,
@@ -16,32 +17,68 @@ import {
   getProvisionalResult,
   calculateTournamentPoints
 } from '../utils/scoring';
+import HoleInfo from './shared/HoleInfo';
+import ScoreCard from './shared/ScoreCard';
+import ScoreEntry from './shared/ScoreEntry';
 import './Scoring.css';
 
 function Scoring() {
   const { matchId } = useParams();
   const navigate = useNavigate();
   const [match, setMatch] = useState(null);
+  const [tournament, setTournament] = useState(null);
+  const [round, setRound] = useState(null);
   const [holes, setHoles] = useState([]);
   const [players, setPlayers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [matches, setMatches] = useState([]);
   const [currentHole, setCurrentHole] = useState(1);
   const [scores, setScores] = useState({});
-  const [expandedHole, setExpandedHole] = useState(null);
 
   useEffect(() => {
+    let unsubTournament = null;
+
     const unsubMatch = subscribeToMatch(matchId, (matchData) => {
       setMatch(matchData);
       setCurrentHole(matchData.currentHole || 1);
+
+      // If match has tournamentId and roundId, load tournament/round data
+      if (matchData.tournamentId) {
+        // Subscribe to tournament to get round data
+        unsubTournament = subscribeToTournament(matchData.tournamentId, (tournamentData) => {
+          setTournament(tournamentData);
+
+          // Find the round this match belongs to
+          if (matchData.roundId && tournamentData.rounds) {
+            const matchRound = tournamentData.rounds.find(r => r.id === matchData.roundId);
+            if (matchRound) {
+              setRound(matchRound);
+              // Extract holes from round's courseData
+              if (matchRound.courseData && matchRound.courseData.holes) {
+                setHoles(matchRound.courseData.holes);
+              } else if (matchRound.courseHoles) {
+                // Alternative structure
+                setHoles(matchRound.courseHoles);
+              }
+            }
+          }
+        });
+      }
     });
-    const unsubHoles = subscribeToHoles(setHoles);
+
+    // Fallback to legacy holes collection
+    const unsubHoles = subscribeToHoles((holesData) => {
+      // Use legacy holes if we don't have holes yet
+      setHoles(prevHoles => prevHoles.length === 0 ? holesData : prevHoles);
+    });
+
     const unsubPlayers = subscribeToPlayers(setPlayers);
     const unsubTeams = subscribeToTeams(setTeams);
     const unsubMatches = subscribeToMatches(setMatches);
 
     return () => {
       unsubMatch();
+      if (unsubTournament) unsubTournament();
       unsubHoles();
       unsubPlayers();
       unsubTeams();
@@ -78,17 +115,69 @@ function Scoring() {
         setScores(loadedScores);
       }
     }
-  }, [currentHole, holes, match]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentHole]);
 
-  if (!match || holes.length === 0) {
+  if (!match) {
     return <div className="loading"><div className="spinner"></div></div>;
   }
 
-  const team1 = teams.find(t => t.id === 'team1');
-  const team2 = teams.find(t => t.id === 'team2');
+  if (holes.length === 0) {
+    return (
+      <div className="scoring">
+        <div className="card">
+          <h2>Course Not Configured</h2>
+          <p>This match doesn't have course holes configured. Please configure the round's course before starting scoring.</p>
+          <button className="button" onClick={() => navigate(-1)}>
+            ← Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Detect tournament type
+  const isIndividualTournament = !tournament?.hasTeams;
+  const isSinglesFormat = match.format === 'singles';
+  const isPartnershipFormat = match.format === 'fourball' || match.format === 'foursomes';
+
+  // Get teams (for team tournaments) or use defaults (for individual tournaments)
+  const team1 = isIndividualTournament
+    ? { name: 'Side 1', color: '#e53e3e' }
+    : (teams.find(t => t.id === 'team1') || { name: 'Team 1', color: '#e53e3e' });
+  const team2 = isIndividualTournament
+    ? { name: 'Side 2', color: '#3182ce' }
+    : (teams.find(t => t.id === 'team2') || { name: 'Team 2', color: '#3182ce' });
+
   const currentHoleData = holes.find(h => h.number === currentHole);
 
   const getPlayer = (playerId) => players.find(p => p.id === playerId);
+
+  // Helper functions to get players based on tournament type and format
+  const getSide1Players = () => {
+    if (isIndividualTournament) {
+      if (isSinglesFormat) {
+        return [match.player1];
+      } else if (isPartnershipFormat) {
+        return match.partnership1 || [];
+      }
+    }
+    return match.team1Players || [];
+  };
+
+  const getSide2Players = () => {
+    if (isIndividualTournament) {
+      if (isSinglesFormat) {
+        return [match.player2];
+      } else if (isPartnershipFormat) {
+        return match.partnership2 || [];
+      }
+    }
+    return match.team2Players || [];
+  };
+
+  const side1Players = getSide1Players();
+  const side2Players = getSide2Players();
 
   const handleScoreChange = (field, value) => {
     setScores({
@@ -117,8 +206,8 @@ function Scoring() {
 
     try {
       if (match.format === 'singles') {
-        const player1 = getPlayer(match.team1Players[0]);
-        const player2 = getPlayer(match.team2Players[0]);
+        const player1 = getPlayer(side1Players[0]);
+        const player2 = getPlayer(side2Players[0]);
 
         if (!scores.team1Player1 || !scores.team2Player1) return null;
 
@@ -138,12 +227,12 @@ function Scoring() {
         if (!scores.team1Score || !scores.team2Score) return null;
 
         const avgHandicap1 = (
-          (getPlayer(match.team1Players[0])?.handicap || 0) +
-          (getPlayer(match.team1Players[1])?.handicap || 0)
+          (getPlayer(side1Players[0])?.handicap || 0) +
+          (getPlayer(side1Players[1])?.handicap || 0)
         ) / 2;
         const avgHandicap2 = (
-          (getPlayer(match.team2Players[0])?.handicap || 0) +
-          (getPlayer(match.team2Players[1])?.handicap || 0)
+          (getPlayer(side2Players[0])?.handicap || 0) +
+          (getPlayer(side2Players[1])?.handicap || 0)
         ) / 2;
 
         const team1Net = calculateNetScore(scores.team1Score, avgHandicap1, currentHoleData.strokeIndex);
@@ -153,10 +242,10 @@ function Scoring() {
       } else if (match.format === 'fourball') {
         if (!scores.team1Player1 || !scores.team1Player2 || !scores.team2Player1 || !scores.team2Player2) return null;
 
-        const player1a = getPlayer(match.team1Players[0]);
-        const player1b = getPlayer(match.team1Players[1]);
-        const player2a = getPlayer(match.team2Players[0]);
-        const player2b = getPlayer(match.team2Players[1]);
+        const player1a = getPlayer(side1Players[0]);
+        const player1b = getPlayer(side1Players[1]);
+        const player2a = getPlayer(side2Players[0]);
+        const player2b = getPlayer(side2Players[1]);
 
         const team1P1Net = calculateNetScore(scores.team1Player1, player1a?.handicap || 0, currentHoleData.strokeIndex);
         const team1P2Net = calculateNetScore(scores.team1Player2, player1b?.handicap || 0, currentHoleData.strokeIndex);
@@ -186,8 +275,8 @@ function Scoring() {
 
     // Calculate based on format
     if (match.format === 'singles') {
-      const player1 = getPlayer(match.team1Players[0]);
-      const player2 = getPlayer(match.team2Players[0]);
+      const player1 = getPlayer(side1Players[0]);
+      const player2 = getPlayer(side2Players[0]);
 
       const team1Net = calculateNetScore(
         scores.team1Player1,
@@ -209,12 +298,12 @@ function Scoring() {
       };
     } else if (match.format === 'foursomes') {
       const avgHandicap1 = (
-        (getPlayer(match.team1Players[0])?.handicap || 0) +
-        (getPlayer(match.team1Players[1])?.handicap || 0)
+        (getPlayer(side1Players[0])?.handicap || 0) +
+        (getPlayer(side1Players[1])?.handicap || 0)
       ) / 2;
       const avgHandicap2 = (
-        (getPlayer(match.team2Players[0])?.handicap || 0) +
-        (getPlayer(match.team2Players[1])?.handicap || 0)
+        (getPlayer(side2Players[0])?.handicap || 0) +
+        (getPlayer(side2Players[1])?.handicap || 0)
       ) / 2;
 
       const team1Net = calculateNetScore(scores.team1Score, avgHandicap1, currentHoleData.strokeIndex);
@@ -228,10 +317,10 @@ function Scoring() {
         winner: determineHoleWinner(match.format, { team1Score: team1Net, team2Score: team2Net }, currentHoleData)
       };
     } else if (match.format === 'fourball') {
-      const player1a = getPlayer(match.team1Players[0]);
-      const player1b = getPlayer(match.team1Players[1]);
-      const player2a = getPlayer(match.team2Players[0]);
-      const player2b = getPlayer(match.team2Players[1]);
+      const player1a = getPlayer(side1Players[0]);
+      const player1b = getPlayer(side1Players[1]);
+      const player2a = getPlayer(side2Players[0]);
+      const player2b = getPlayer(side2Players[1]);
 
       const team1P1Net = calculateNetScore(scores.team1Player1, player1a?.handicap || 0, currentHoleData.strokeIndex);
       const team1P2Net = calculateNetScore(scores.team1Player2, player1b?.handicap || 0, currentHoleData.strokeIndex);
@@ -264,6 +353,34 @@ function Scoring() {
         holeScores: updatedHoleScores,
         currentHole: 18
       });
+
+      // Update match data in the tournament's rounds array
+      if (tournament && round) {
+        const roundIndex = tournament.rounds.findIndex(r => r.id === round.id);
+        if (roundIndex !== -1) {
+          const updatedRounds = [...tournament.rounds];
+          const currentRound = updatedRounds[roundIndex];
+
+          if (currentRound.matches && currentRound.matches.length > 0) {
+            updatedRounds[roundIndex].matches = currentRound.matches.map(m =>
+              m.id === matchId ? {
+                ...m,
+                currentHole: 18
+              } : m
+            );
+
+            const tournamentUpdate = { rounds: updatedRounds };
+            if (tournament.status === 'setup') {
+              tournamentUpdate.status = 'in_progress';
+            }
+
+            await updateTournament(tournament.id, tournamentUpdate);
+          }
+        }
+      } else if (tournament && tournament.status === 'setup') {
+        await updateTournament(tournament.id, { status: 'in_progress' });
+      }
+
       // Stay on hole 18, user will confirm to complete
       return;
     }
@@ -275,20 +392,58 @@ function Scoring() {
     // If we're editing a past hole, just save it without advancing
     // Only advance currentHole in the database if we're on the actual current hole
     const isOnCurrentHole = currentHole === match.currentHole;
-    const nextHole = isOnCurrentHole ? (matchStatus.isComplete ? currentHole : Math.min(currentHole + 1, 18)) : match.currentHole;
+
+    // Always advance to next hole, even if match is decided
+    // This allows players to complete their scorecard for practice/handicap purposes
+    const nextHole = isOnCurrentHole ? Math.min(currentHole + 1, 18) : match.currentHole;
+
+    // Lock the result once it's determined - don't update if we already have a locked result
+    const lockedResult = match.resultLocked ? match.result : result;
+    const resultLocked = match.resultLocked || matchStatus.isComplete;
 
     await updateMatch(matchId, {
       holeScores: updatedHoleScores,
       currentHole: nextHole,
-      status: matchStatus.isComplete ? 'completed' : 'in_progress',
-      result: result
+      status: 'in_progress', // Never auto-complete, always require user confirmation
+      result: lockedResult,
+      resultLocked: resultLocked // New flag to indicate result is locked
     });
 
-    // Move to next hole or finish only if we were on the current hole
-    if (matchStatus.isComplete) {
-      alert(`Match completed! ${matchStatus.status}`);
-      navigate('/');
-    } else if (isOnCurrentHole && currentHole < 18) {
+    // Update match data in the tournament's rounds array
+    if (tournament && round) {
+      const roundIndex = tournament.rounds.findIndex(r => r.id === round.id);
+      if (roundIndex !== -1) {
+        const updatedRounds = [...tournament.rounds];
+        const currentRound = updatedRounds[roundIndex];
+
+        if (currentRound.matches && currentRound.matches.length > 0) {
+          updatedRounds[roundIndex].matches = currentRound.matches.map(m =>
+            m.id === matchId ? {
+              ...m,
+              currentHole: nextHole,
+              status: 'in_progress',
+              result: lockedResult,
+              resultLocked: resultLocked
+            } : m
+          );
+
+          // Automatically start tournament if it's still in setup
+          const tournamentUpdate = { rounds: updatedRounds };
+          if (tournament.status === 'setup') {
+            tournamentUpdate.status = 'in_progress';
+          }
+
+          await updateTournament(tournament.id, tournamentUpdate);
+        }
+      }
+    } else if (tournament && tournament.status === 'setup') {
+      // If no round data, just update tournament status
+      await updateTournament(tournament.id, { status: 'in_progress' });
+    }
+
+    // Always move to next hole (unless on hole 18)
+    // This allows players to complete their scorecard even after match is decided
+    if (isOnCurrentHole && currentHole < 18) {
       setCurrentHole(currentHole + 1);
     } else if (!isOnCurrentHole) {
       // If editing a past hole, return to the current hole
@@ -297,18 +452,59 @@ function Scoring() {
   };
 
   const confirmMatchComplete = async () => {
-    // Final confirmation after hole 18
-    const matchStatus = calculateMatchStatus(match.holeScores, 18, team1?.name, team2?.name);
-    const result = getMatchResult(match.holeScores);
+    // Use the locked result if available, otherwise calculate from scored holes
+    const result = match.resultLocked ? match.result : getMatchResult(match.holeScores);
 
     await updateMatch(matchId, {
       currentHole: 18,
       status: 'completed',
-      result: result
+      result: result,
+      resultLocked: match.resultLocked
     });
 
-    alert(`Match completed! ${matchStatus.status}`);
-    navigate('/');
+    // Update match data in the tournament's rounds array and check if round is complete
+    if (tournament && round) {
+      const roundIndex = tournament.rounds.findIndex(r => r.id === round.id);
+      if (roundIndex !== -1) {
+        const updatedRounds = [...tournament.rounds];
+        const currentRound = updatedRounds[roundIndex];
+
+        // Update the match data in the rounds array
+        if (currentRound.matches && currentRound.matches.length > 0) {
+          updatedRounds[roundIndex].matches = currentRound.matches.map(m =>
+            m.id === matchId ? {
+              ...m,
+              currentHole: 18,
+              status: 'completed',
+              result: result,
+              resultLocked: match.resultLocked
+            } : m
+          );
+
+          // Check if all matches are completed
+          const allMatchesCompleted = updatedRounds[roundIndex].matches.every(m =>
+            m.status === 'completed'
+          );
+
+          if (allMatchesCompleted) {
+            updatedRounds[roundIndex] = {
+              ...updatedRounds[roundIndex],
+              status: 'completed',
+              completedAt: new Date().toISOString()
+            };
+          }
+
+          await updateTournament(tournament.id, { rounds: updatedRounds });
+        }
+      }
+    }
+
+    alert(`Match completed! ${result}`);
+    if (tournament && tournament.id) {
+      navigate(`/tournaments/${tournament.id}`);
+    } else {
+      navigate('/');
+    }
   };
 
   const goToPreviousHole = () => {
@@ -318,7 +514,10 @@ function Scoring() {
     }
   };
 
-  const matchStatus = calculateMatchStatus(match.holeScores, currentHole - 1, team1?.name, team2?.name);
+  // Calculate match status based on all scored holes (not currentHole - 1)
+  // Count how many holes have actually been scored (have a winner)
+  const holesActuallyScored = match.holeScores.filter(h => h?.winner !== undefined).length;
+  const matchStatus = calculateMatchStatus(match.holeScores, holesActuallyScored, team1?.name, team2?.name);
 
   // Calculate Stableford points (net score relative to par)
   const calculateStableford = (netScore, par) => {
@@ -339,8 +538,8 @@ function Scoring() {
     let details = { hole, scores: [] };
 
     if (match.format === 'singles') {
-      const team1Player = getPlayer(match.team1Players[0]);
-      const team2Player = getPlayer(match.team2Players[0]);
+      const team1Player = getPlayer(side1Players[0]);
+      const team2Player = getPlayer(side2Players[0]);
 
       details.scores = [
         {
@@ -362,42 +561,54 @@ function Scoring() {
       details.scores = [
         {
           team: team1?.name,
-          player: `${getPlayer(match.team1Players[0])?.name} & ${getPlayer(match.team1Players[1])?.name}`,
+          player: `${getPlayer(side1Players[0])?.name} & ${getPlayer(side1Players[1])?.name}`,
           gross: holeScore.team1Gross,
           net: holeScore.team1Score,
           stableford: calculateStableford(holeScore.team1Score, hole.par)
         },
         {
           team: team2?.name,
-          player: `${getPlayer(match.team2Players[0])?.name} & ${getPlayer(match.team2Players[1])?.name}`,
+          player: `${getPlayer(side2Players[0])?.name} & ${getPlayer(side2Players[1])?.name}`,
           gross: holeScore.team2Gross,
           net: holeScore.team2Score,
           stableford: calculateStableford(holeScore.team2Score, hole.par)
         }
       ];
     } else if (match.format === 'fourball') {
-      const team1Player1 = getPlayer(match.team1Players[0]);
-      const team1Player2 = getPlayer(match.team1Players[1]);
-      const team2Player1 = getPlayer(match.team2Players[0]);
-      const team2Player2 = getPlayer(match.team2Players[1]);
+      const team1Player1 = getPlayer(side1Players[0]);
+      const team1Player2 = getPlayer(side1Players[1]);
+      const team2Player1 = getPlayer(side2Players[0]);
+      const team2Player2 = getPlayer(side2Players[1]);
 
-      const team1BestNet = Math.min(holeScore.team1Player1 || 999, holeScore.team1Player2 || 999);
-      const team2BestNet = Math.min(holeScore.team2Player1 || 999, holeScore.team2Player2 || 999);
-
+      // Show all 4 players individually in fourball
       details.scores = [
         {
           team: team1?.name,
-          player: `${team1Player1?.name} (${holeScore.team1Player1Gross}/${holeScore.team1Player1}), ${team1Player2?.name} (${holeScore.team1Player2Gross}/${holeScore.team1Player2})`,
-          gross: Math.min(holeScore.team1Player1Gross || 999, holeScore.team1Player2Gross || 999),
-          net: team1BestNet === 999 ? null : team1BestNet,
-          stableford: calculateStableford(team1BestNet === 999 ? null : team1BestNet, hole.par)
+          player: team1Player1?.name,
+          gross: holeScore.team1Player1Gross,
+          net: holeScore.team1Player1,
+          stableford: calculateStableford(holeScore.team1Player1, hole.par)
+        },
+        {
+          team: team1?.name,
+          player: team1Player2?.name,
+          gross: holeScore.team1Player2Gross,
+          net: holeScore.team1Player2,
+          stableford: calculateStableford(holeScore.team1Player2, hole.par)
         },
         {
           team: team2?.name,
-          player: `${team2Player1?.name} (${holeScore.team2Player1Gross}/${holeScore.team2Player1}), ${team2Player2?.name} (${holeScore.team2Player2Gross}/${holeScore.team2Player2})`,
-          gross: Math.min(holeScore.team2Player1Gross || 999, holeScore.team2Player2Gross || 999),
-          net: team2BestNet === 999 ? null : team2BestNet,
-          stableford: calculateStableford(team2BestNet === 999 ? null : team2BestNet, hole.par)
+          player: team2Player1?.name,
+          gross: holeScore.team2Player1Gross,
+          net: holeScore.team2Player1,
+          stableford: calculateStableford(holeScore.team2Player1, hole.par)
+        },
+        {
+          team: team2?.name,
+          player: team2Player2?.name,
+          gross: holeScore.team2Player2Gross,
+          net: holeScore.team2Player2,
+          stableford: calculateStableford(holeScore.team2Player2, hole.par)
         }
       ];
     }
@@ -432,57 +643,70 @@ function Scoring() {
     <div className="scoring">
       <div className="card">
         <div className="scoring-header">
-          <button className="button secondary small" onClick={() => navigate('/matches')}>
-            ← Back to Matches
+          <button className="button secondary small" onClick={() => {
+            if (tournament && tournament.id) {
+              navigate(`/tournaments/${tournament.id}`);
+            } else {
+              navigate('/matches');
+            }
+          }}>
+            ← Back to {tournament ? 'Tournament' : 'Matches'}
           </button>
-          <div>
-            <h2>{match.name}</h2>
-            <div className="match-status">
-              <span className="format-badge">{match.format}</span>
-              <span className="status-text">{matchStatus.status}</span>
+          <div className="header-content">
+            <div className="match-info">
+              <h2>{match.name}</h2>
+              <div className="match-status">
+                <span className="format-badge">{match.format}</span>
+                <span className="status-text">{matchStatus.status}</span>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="card mini-leaderboard">
-        <h4>Tournament Standings</h4>
-        <div className="mini-score-display">
-          <div className="mini-team-score" style={{ backgroundColor: team1?.color }}>
-            <div className="mini-team-name">{team1?.name || 'Team 1'}</div>
-            <div className="mini-team-points">
-              {team1Points}
-              {team1Projected !== team1Points && (
-                <span className="mini-provisional"> ({team1Projected})</span>
-              )}
-            </div>
-          </div>
-          <div className="mini-score-divider">-</div>
-          <div className="mini-team-score" style={{ backgroundColor: team2?.color }}>
-            <div className="mini-team-name">{team2?.name || 'Team 2'}</div>
-            <div className="mini-team-points">
-              {team2Points}
-              {team2Projected !== team2Points && (
-                <span className="mini-provisional"> ({team2Projected})</span>
-              )}
-            </div>
+            {!isIndividualTournament && (
+              <div className="header-leaderboard">
+                <h4>Tournament Standings</h4>
+                <div className="mini-score-display">
+                  <div className="mini-team-score" style={{ backgroundColor: team1?.color }}>
+                    <div className="mini-team-name">{team1?.name || 'Team 1'}</div>
+                    <div className="mini-team-points">
+                      {team1Points}
+                      {team1Projected !== team1Points && (
+                        <span className="mini-provisional"> ({team1Projected})</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mini-score-divider">-</div>
+                  <div className="mini-team-score" style={{ backgroundColor: team2?.color }}>
+                    <div className="mini-team-name">{team2?.name || 'Team 2'}</div>
+                    <div className="mini-team-points">
+                      {team2Points}
+                      {team2Projected !== team2Points && (
+                        <span className="mini-provisional"> ({team2Projected})</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {isIndividualTournament && (
+              <div className="header-leaderboard">
+                <div className="friendly-match-badge">
+                  <span className="badge-icon">🤝</span>
+                  <span className="badge-text">Friendly Match</span>
+                </div>
+                <p className="friendly-match-note">This match does not count towards tournament standings</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       <div className="scoring-grid">
         <div className="card hole-info">
-          <h3>Hole {currentHole}</h3>
-          <div className="hole-details">
-            <div className="detail">
-              <span className="label">Par</span>
-              <span className="value">{currentHoleData?.par}</span>
-            </div>
-            <div className="detail">
-              <span className="label">Stroke Index</span>
-              <span className="value">{currentHoleData?.strokeIndex}</span>
-            </div>
-          </div>
+          <HoleInfo
+            holeNumber={currentHole}
+            par={currentHoleData?.par}
+            strokeIndex={currentHoleData?.strokeIndex}
+            compact={true}
+          />
         </div>
 
         <div className="card match-progress">
@@ -521,64 +745,28 @@ function Scoring() {
           <div className="singles-scoring">
             <div className="team-score-section" style={{ borderTopColor: team1?.color }}>
               <h4 style={{ color: team1?.color }}>{team1?.name}</h4>
-              <div className="player-score">
-                <label>{getPlayer(match.team1Players[0])?.name} (HCP: {getPlayer(match.team1Players[0])?.handicap})</label>
-                <div className="score-controls">
-                  <button
-                    className="score-button decrement"
-                    onClick={() => decrementScore('team1Player1')}
-                    type="button"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    max="15"
-                    value={scores.team1Player1 || ''}
-                    onChange={(e) => handleScoreChange('team1Player1', e.target.value)}
-                    className="score-input"
-                  />
-                  <button
-                    className="score-button increment"
-                    onClick={() => incrementScore('team1Player1')}
-                    type="button"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+              <ScoreEntry
+                value={scores.team1Player1 || ''}
+                onChange={(value) => handleScoreChange('team1Player1', value)}
+                onIncrement={() => incrementScore('team1Player1')}
+                onDecrement={() => decrementScore('team1Player1')}
+                label={`${getPlayer(side1Players[0])?.name} (HCP: ${getPlayer(side1Players[0])?.handicap})`}
+                min={1}
+                max={15}
+              />
             </div>
 
             <div className="team-score-section" style={{ borderTopColor: team2?.color }}>
               <h4 style={{ color: team2?.color }}>{team2?.name}</h4>
-              <div className="player-score">
-                <label>{getPlayer(match.team2Players[0])?.name} (HCP: {getPlayer(match.team2Players[0])?.handicap})</label>
-                <div className="score-controls">
-                  <button
-                    className="score-button decrement"
-                    onClick={() => decrementScore('team2Player1')}
-                    type="button"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    max="15"
-                    value={scores.team2Player1 || ''}
-                    onChange={(e) => handleScoreChange('team2Player1', e.target.value)}
-                    className="score-input"
-                  />
-                  <button
-                    className="score-button increment"
-                    onClick={() => incrementScore('team2Player1')}
-                    type="button"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+              <ScoreEntry
+                value={scores.team2Player1 || ''}
+                onChange={(value) => handleScoreChange('team2Player1', value)}
+                onIncrement={() => incrementScore('team2Player1')}
+                onDecrement={() => decrementScore('team2Player1')}
+                label={`${getPlayer(side2Players[0])?.name} (HCP: ${getPlayer(side2Players[0])?.handicap})`}
+                min={1}
+                max={15}
+              />
             </div>
           </div>
         )}
@@ -588,69 +776,33 @@ function Scoring() {
             <div className="team-score-section" style={{ borderTopColor: team1?.color }}>
               <h4 style={{ color: team1?.color }}>{team1?.name}</h4>
               <p className="team-players">
-                {getPlayer(match.team1Players[0])?.name} & {getPlayer(match.team1Players[1])?.name}
+                {getPlayer(side1Players[0])?.name} & {getPlayer(side1Players[1])?.name}
               </p>
-              <div className="player-score">
-                <label>Team Score</label>
-                <div className="score-controls">
-                  <button
-                    className="score-button decrement"
-                    onClick={() => decrementScore('team1Score')}
-                    type="button"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    max="15"
-                    value={scores.team1Score || ''}
-                    onChange={(e) => handleScoreChange('team1Score', e.target.value)}
-                    className="score-input"
-                  />
-                  <button
-                    className="score-button increment"
-                    onClick={() => incrementScore('team1Score')}
-                    type="button"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+              <ScoreEntry
+                value={scores.team1Score || ''}
+                onChange={(value) => handleScoreChange('team1Score', value)}
+                onIncrement={() => incrementScore('team1Score')}
+                onDecrement={() => decrementScore('team1Score')}
+                label="Team Score"
+                min={1}
+                max={15}
+              />
             </div>
 
             <div className="team-score-section" style={{ borderTopColor: team2?.color }}>
               <h4 style={{ color: team2?.color }}>{team2?.name}</h4>
               <p className="team-players">
-                {getPlayer(match.team2Players[0])?.name} & {getPlayer(match.team2Players[1])?.name}
+                {getPlayer(side2Players[0])?.name} & {getPlayer(side2Players[1])?.name}
               </p>
-              <div className="player-score">
-                <label>Team Score</label>
-                <div className="score-controls">
-                  <button
-                    className="score-button decrement"
-                    onClick={() => decrementScore('team2Score')}
-                    type="button"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    max="15"
-                    value={scores.team2Score || ''}
-                    onChange={(e) => handleScoreChange('team2Score', e.target.value)}
-                    className="score-input"
-                  />
-                  <button
-                    className="score-button increment"
-                    onClick={() => incrementScore('team2Score')}
-                    type="button"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+              <ScoreEntry
+                value={scores.team2Score || ''}
+                onChange={(value) => handleScoreChange('team2Score', value)}
+                onIncrement={() => incrementScore('team2Score')}
+                onDecrement={() => decrementScore('team2Score')}
+                label="Team Score"
+                min={1}
+                max={15}
+              />
             </div>
           </div>
         )}
@@ -659,118 +811,46 @@ function Scoring() {
           <div className="fourball-scoring">
             <div className="team-score-section" style={{ borderTopColor: team1?.color }}>
               <h4 style={{ color: team1?.color }}>{team1?.name}</h4>
-              <div className="player-score">
-                <label>{getPlayer(match.team1Players[0])?.name} (HCP: {getPlayer(match.team1Players[0])?.handicap})</label>
-                <div className="score-controls">
-                  <button
-                    className="score-button decrement"
-                    onClick={() => decrementScore('team1Player1')}
-                    type="button"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    max="15"
-                    value={scores.team1Player1 || ''}
-                    onChange={(e) => handleScoreChange('team1Player1', e.target.value)}
-                    className="score-input"
-                  />
-                  <button
-                    className="score-button increment"
-                    onClick={() => incrementScore('team1Player1')}
-                    type="button"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-              <div className="player-score">
-                <label>{getPlayer(match.team1Players[1])?.name} (HCP: {getPlayer(match.team1Players[1])?.handicap})</label>
-                <div className="score-controls">
-                  <button
-                    className="score-button decrement"
-                    onClick={() => decrementScore('team1Player2')}
-                    type="button"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    max="15"
-                    value={scores.team1Player2 || ''}
-                    onChange={(e) => handleScoreChange('team1Player2', e.target.value)}
-                    className="score-input"
-                  />
-                  <button
-                    className="score-button increment"
-                    onClick={() => incrementScore('team1Player2')}
-                    type="button"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+              <ScoreEntry
+                value={scores.team1Player1 || ''}
+                onChange={(value) => handleScoreChange('team1Player1', value)}
+                onIncrement={() => incrementScore('team1Player1')}
+                onDecrement={() => decrementScore('team1Player1')}
+                label={`${getPlayer(side1Players[0])?.name} (HCP: ${getPlayer(side1Players[0])?.handicap})`}
+                min={1}
+                max={15}
+              />
+              <ScoreEntry
+                value={scores.team1Player2 || ''}
+                onChange={(value) => handleScoreChange('team1Player2', value)}
+                onIncrement={() => incrementScore('team1Player2')}
+                onDecrement={() => decrementScore('team1Player2')}
+                label={`${getPlayer(side1Players[1])?.name} (HCP: ${getPlayer(side1Players[1])?.handicap})`}
+                min={1}
+                max={15}
+              />
             </div>
 
             <div className="team-score-section" style={{ borderTopColor: team2?.color }}>
               <h4 style={{ color: team2?.color }}>{team2?.name}</h4>
-              <div className="player-score">
-                <label>{getPlayer(match.team2Players[0])?.name} (HCP: {getPlayer(match.team2Players[0])?.handicap})</label>
-                <div className="score-controls">
-                  <button
-                    className="score-button decrement"
-                    onClick={() => decrementScore('team2Player1')}
-                    type="button"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    max="15"
-                    value={scores.team2Player1 || ''}
-                    onChange={(e) => handleScoreChange('team2Player1', e.target.value)}
-                    className="score-input"
-                  />
-                  <button
-                    className="score-button increment"
-                    onClick={() => incrementScore('team2Player1')}
-                    type="button"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-              <div className="player-score">
-                <label>{getPlayer(match.team2Players[1])?.name} (HCP: {getPlayer(match.team2Players[1])?.handicap})</label>
-                <div className="score-controls">
-                  <button
-                    className="score-button decrement"
-                    onClick={() => decrementScore('team2Player2')}
-                    type="button"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    max="15"
-                    value={scores.team2Player2 || ''}
-                    onChange={(e) => handleScoreChange('team2Player2', e.target.value)}
-                    className="score-input"
-                  />
-                  <button
-                    className="score-button increment"
-                    onClick={() => incrementScore('team2Player2')}
-                    type="button"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+              <ScoreEntry
+                value={scores.team2Player1 || ''}
+                onChange={(value) => handleScoreChange('team2Player1', value)}
+                onIncrement={() => incrementScore('team2Player1')}
+                onDecrement={() => decrementScore('team2Player1')}
+                label={`${getPlayer(side2Players[0])?.name} (HCP: ${getPlayer(side2Players[0])?.handicap})`}
+                min={1}
+                max={15}
+              />
+              <ScoreEntry
+                value={scores.team2Player2 || ''}
+                onChange={(value) => handleScoreChange('team2Player2', value)}
+                onIncrement={() => incrementScore('team2Player2')}
+                onDecrement={() => decrementScore('team2Player2')}
+                label={`${getPlayer(side2Players[1])?.name} (HCP: ${getPlayer(side2Players[1])?.handicap})`}
+                min={1}
+                max={15}
+              />
             </div>
           </div>
         )}
@@ -802,285 +882,88 @@ function Scoring() {
                 ? 'Update & Return to Current Hole'
                 : currentHole === 18
                   ? 'Submit Hole 18'
-                  : matchStatus.isComplete
-                    ? 'Complete Match'
-                    : 'Next Hole →'}
+                  : 'Next Hole →'}
             </button>
           )}
         </div>
+
+        {/* Match Result Locked Notice */}
+        {match.resultLocked && match.status !== 'completed' && (
+          <div className="match-decided-notice info">
+            <div className="notice-icon">🔒</div>
+            <div className="notice-content">
+              <h4>Match Result Locked</h4>
+              <p><strong>{match.result}</strong></p>
+              <p className="notice-subtext">
+                The match result is locked and will not change. You can continue scoring the remaining holes to complete your scorecard.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Scorecard View */}
-      <div className="card scorecard">
-        <h3>Scorecard</h3>
-        {currentHole < match.currentHole && (
-          <div className="viewing-past-notice">
-            Viewing past hole - scorecard shows completed holes only
-          </div>
-        )}
-
-        {/* Front 9 */}
-        <div className="scorecard-nine">
-          <div className="scorecard-header">Front 9</div>
-          <table className="scorecard-table">
-            <thead>
-              <tr>
-                <th>Hole</th>
-                {holes.slice(0, 9).map((hole) => (
-                  <th key={hole.number}>{hole.number}</th>
-                ))}
-                <th className="total-col">OUT</th>
-              </tr>
-              <tr className="par-row">
-                <td>Par</td>
-                {holes.slice(0, 9).map((hole) => (
-                  <td key={hole.number}>{hole.par}</td>
-                ))}
-                <td className="total-col">{holes.slice(0, 9).reduce((sum, h) => sum + h.par, 0)}</td>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Team 1 / Player 1 */}
-              <tr className="score-row">
-                <td className="player-name" style={{ borderLeftColor: team1?.color }}>
-                  {match.format === 'singles' ? getPlayer(match.team1Players[0])?.name :
-                   match.format === 'foursomes' ? team1?.name :
-                   getPlayer(match.team1Players[0])?.name}
-                </td>
-                {holes.slice(0, 9).map((hole, idx) => {
-                  const holeScore = match.holeScores[idx];
-                  const gross = match.format === 'singles' ? holeScore?.team1Gross :
-                                match.format === 'foursomes' ? holeScore?.team1Gross :
-                                holeScore?.team1Player1Gross;
-                  const isWinner = holeScore?.winner === 'team1';
-                  const isHalved = holeScore?.winner === 'halved';
-
-                  return (
-                    <td
-                      key={hole.number}
-                      className={`score-cell ${gross ? (isWinner ? 'winner' : isHalved ? 'halved' : '') : 'empty'} ${idx + 1 === currentHole ? 'current' : ''}`}
-                      onClick={() => gross && setExpandedHole(expandedHole === idx + 1 ? null : idx + 1)}
-                      style={{ cursor: gross ? 'pointer' : 'default' }}
-                    >
-                      {gross || '-'}
-                    </td>
-                  );
-                })}
-                <td className="total-col">
-                  {match.holeScores.slice(0, 9).reduce((sum, hs) => {
-                    const gross = match.format === 'singles' ? hs?.team1Gross :
-                                  match.format === 'foursomes' ? hs?.team1Gross :
-                                  hs?.team1Player1Gross;
-                    return sum + (gross || 0);
-                  }, 0) || '-'}
-                </td>
-              </tr>
-
-              {/* Team 2 / Player 2 */}
-              <tr className="score-row">
-                <td className="player-name" style={{ borderLeftColor: team2?.color }}>
-                  {match.format === 'singles' ? getPlayer(match.team2Players[0])?.name :
-                   match.format === 'foursomes' ? team2?.name :
-                   getPlayer(match.team2Players[0])?.name}
-                </td>
-                {holes.slice(0, 9).map((hole, idx) => {
-                  const holeScore = match.holeScores[idx];
-                  const gross = match.format === 'singles' ? holeScore?.team2Gross :
-                                match.format === 'foursomes' ? holeScore?.team2Gross :
-                                holeScore?.team2Player1Gross;
-                  const isWinner = holeScore?.winner === 'team2';
-                  const isHalved = holeScore?.winner === 'halved';
-
-                  return (
-                    <td
-                      key={hole.number}
-                      className={`score-cell ${gross ? (isWinner ? 'winner' : isHalved ? 'halved' : '') : 'empty'} ${idx + 1 === currentHole ? 'current' : ''}`}
-                      onClick={() => gross && setExpandedHole(expandedHole === idx + 1 ? null : idx + 1)}
-                      style={{ cursor: gross ? 'pointer' : 'default' }}
-                    >
-                      {gross || '-'}
-                    </td>
-                  );
-                })}
-                <td className="total-col">
-                  {match.holeScores.slice(0, 9).reduce((sum, hs) => {
-                    const gross = match.format === 'singles' ? hs?.team2Gross :
-                                  match.format === 'foursomes' ? hs?.team2Gross :
-                                  hs?.team2Player1Gross;
-                    return sum + (gross || 0);
-                  }, 0) || '-'}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Back 9 */}
-        <div className="scorecard-nine">
-          <div className="scorecard-header">Back 9</div>
-          <table className="scorecard-table">
-            <thead>
-              <tr>
-                <th>Hole</th>
-                {holes.slice(9, 18).map((hole) => (
-                  <th key={hole.number}>{hole.number}</th>
-                ))}
-                <th className="total-col">IN</th>
-                <th className="total-col">TOT</th>
-              </tr>
-              <tr className="par-row">
-                <td>Par</td>
-                {holes.slice(9, 18).map((hole) => (
-                  <td key={hole.number}>{hole.par}</td>
-                ))}
-                <td className="total-col">{holes.slice(9, 18).reduce((sum, h) => sum + h.par, 0)}</td>
-                <td className="total-col">{holes.reduce((sum, h) => sum + h.par, 0)}</td>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Team 1 / Player 1 */}
-              <tr className="score-row">
-                <td className="player-name" style={{ borderLeftColor: team1?.color }}>
-                  {match.format === 'singles' ? getPlayer(match.team1Players[0])?.name :
-                   match.format === 'foursomes' ? team1?.name :
-                   getPlayer(match.team1Players[0])?.name}
-                </td>
-                {holes.slice(9, 18).map((hole, idx) => {
-                  const holeIdx = idx + 9;
-                  const holeScore = match.holeScores[holeIdx];
-                  const gross = match.format === 'singles' ? holeScore?.team1Gross :
-                                match.format === 'foursomes' ? holeScore?.team1Gross :
-                                holeScore?.team1Player1Gross;
-                  const isWinner = holeScore?.winner === 'team1';
-                  const isHalved = holeScore?.winner === 'halved';
-
-                  return (
-                    <td
-                      key={hole.number}
-                      className={`score-cell ${gross ? (isWinner ? 'winner' : isHalved ? 'halved' : '') : 'empty'} ${holeIdx + 1 === currentHole ? 'current' : ''}`}
-                      onClick={() => gross && setExpandedHole(expandedHole === holeIdx + 1 ? null : holeIdx + 1)}
-                      style={{ cursor: gross ? 'pointer' : 'default' }}
-                    >
-                      {gross || '-'}
-                    </td>
-                  );
-                })}
-                <td className="total-col">
-                  {match.holeScores.slice(9, 18).reduce((sum, hs) => {
-                    const gross = match.format === 'singles' ? hs?.team1Gross :
-                                  match.format === 'foursomes' ? hs?.team1Gross :
-                                  hs?.team1Player1Gross;
-                    return sum + (gross || 0);
-                  }, 0) || '-'}
-                </td>
-                <td className="total-col">
-                  {match.holeScores.reduce((sum, hs) => {
-                    const gross = match.format === 'singles' ? hs?.team1Gross :
-                                  match.format === 'foursomes' ? hs?.team1Gross :
-                                  hs?.team1Player1Gross;
-                    return sum + (gross || 0);
-                  }, 0) || '-'}
-                </td>
-              </tr>
-
-              {/* Team 2 / Player 2 */}
-              <tr className="score-row">
-                <td className="player-name" style={{ borderLeftColor: team2?.color }}>
-                  {match.format === 'singles' ? getPlayer(match.team2Players[0])?.name :
-                   match.format === 'foursomes' ? team2?.name :
-                   getPlayer(match.team2Players[0])?.name}
-                </td>
-                {holes.slice(9, 18).map((hole, idx) => {
-                  const holeIdx = idx + 9;
-                  const holeScore = match.holeScores[holeIdx];
-                  const gross = match.format === 'singles' ? holeScore?.team2Gross :
-                                match.format === 'foursomes' ? holeScore?.team2Gross :
-                                holeScore?.team2Player1Gross;
-                  const isWinner = holeScore?.winner === 'team2';
-                  const isHalved = holeScore?.winner === 'halved';
-
-                  return (
-                    <td
-                      key={hole.number}
-                      className={`score-cell ${gross ? (isWinner ? 'winner' : isHalved ? 'halved' : '') : 'empty'} ${holeIdx + 1 === currentHole ? 'current' : ''}`}
-                      onClick={() => gross && setExpandedHole(expandedHole === holeIdx + 1 ? null : holeIdx + 1)}
-                      style={{ cursor: gross ? 'pointer' : 'default' }}
-                    >
-                      {gross || '-'}
-                    </td>
-                  );
-                })}
-                <td className="total-col">
-                  {match.holeScores.slice(9, 18).reduce((sum, hs) => {
-                    const gross = match.format === 'singles' ? hs?.team2Gross :
-                                  match.format === 'foursomes' ? hs?.team2Gross :
-                                  hs?.team2Player1Gross;
-                    return sum + (gross || 0);
-                  }, 0) || '-'}
-                </td>
-                <td className="total-col">
-                  {match.holeScores.reduce((sum, hs) => {
-                    const gross = match.format === 'singles' ? hs?.team2Gross :
-                                  match.format === 'foursomes' ? hs?.team2Gross :
-                                  hs?.team2Player1Gross;
-                    return sum + (gross || 0);
-                  }, 0) || '-'}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Expanded Hole Details */}
-        {expandedHole && match.holeScores[expandedHole - 1] && (
-          <div className="hole-detail-expanded">
-            <div className="detail-header">
-              <h4>Hole {expandedHole} Details</h4>
-              <button onClick={() => setExpandedHole(null)} className="close-detail">✕</button>
-            </div>
-            {(() => {
-              const details = getHoleScoreDetails(match.holeScores[expandedHole - 1], expandedHole);
-              if (!details) return null;
-
-              return (
-                <div className="detail-content">
-                  <div className="detail-hole-info">
-                    <span>Par {details.hole.par}</span>
-                    <span>•</span>
-                    <span>Stroke Index {details.hole.strokeIndex}</span>
-                    <span>•</span>
-                    <span className={`result-badge ${match.holeScores[expandedHole - 1].winner === 'team1' ? 'team1-win' : match.holeScores[expandedHole - 1].winner === 'team2' ? 'team2-win' : 'halved'}`}>
-                      {match.holeScores[expandedHole - 1].winner === 'team1' ? team1?.name :
-                       match.holeScores[expandedHole - 1].winner === 'team2' ? team2?.name :
-                       'Halved'}
-                    </span>
-                  </div>
-                  <div className="detail-scores">
-                    {details.scores.map((score, idx) => (
-                      <div key={idx} className="detail-score-card" style={{ borderTopColor: idx === 0 ? team1?.color : team2?.color }}>
-                        <div className="detail-team">{score.team}</div>
-                        <div className="detail-stats">
-                          <div className="stat">
-                            <span className="stat-label">Gross</span>
-                            <span className="stat-value">{score.gross}</span>
-                          </div>
-                          <div className="stat">
-                            <span className="stat-label">Net</span>
-                            <span className="stat-value">{score.net}</span>
-                          </div>
-                          <div className="stat">
-                            <span className="stat-label">Stableford</span>
-                            <span className="stat-value">{score.stableford}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        )}
+      {/* Match Scorecard */}
+      <div className="card">
+        <ScoreCard
+          holes={holes}
+          scoringData={
+            match.format === 'fourball' ? [
+              {
+                label: `${getPlayer(side1Players[0])?.name || 'P1'} (${team1?.name})`,
+                scores: match.holeScores.map(holeScore => ({
+                  grossScore: holeScore.team1Player1Gross,
+                  netScore: holeScore.team1Player1
+                }))
+              },
+              {
+                label: `${getPlayer(side1Players[1])?.name || 'P2'} (${team1?.name})`,
+                scores: match.holeScores.map(holeScore => ({
+                  grossScore: holeScore.team1Player2Gross,
+                  netScore: holeScore.team1Player2
+                }))
+              },
+              {
+                label: `${getPlayer(side2Players[0])?.name || 'P1'} (${team2?.name})`,
+                scores: match.holeScores.map(holeScore => ({
+                  grossScore: holeScore.team2Player1Gross,
+                  netScore: holeScore.team2Player1
+                }))
+              },
+              {
+                label: `${getPlayer(side2Players[1])?.name || 'P2'} (${team2?.name})`,
+                scores: match.holeScores.map(holeScore => ({
+                  grossScore: holeScore.team2Player2Gross,
+                  netScore: holeScore.team2Player2
+                }))
+              }
+            ] : [
+              {
+                label: match.format === 'foursomes'
+                  ? `${getPlayer(side1Players[0])?.name || 'P1'} & ${getPlayer(side1Players[1])?.name || 'P2'}`
+                  : getPlayer(side1Players[0])?.name || team1?.name || 'Side 1',
+                scores: match.holeScores.map((holeScore, idx) => ({
+                  grossScore: holeScore.team1Gross,
+                  netScore: match.format === 'singles'
+                    ? holeScore.team1Player1
+                    : holeScore.team1Score
+                }))
+              },
+              {
+                label: match.format === 'foursomes'
+                  ? `${getPlayer(side2Players[0])?.name || 'P1'} & ${getPlayer(side2Players[1])?.name || 'P2'}`
+                  : getPlayer(side2Players[0])?.name || team2?.name || 'Side 2',
+                scores: match.holeScores.map((holeScore, idx) => ({
+                  grossScore: holeScore.team2Gross,
+                  netScore: match.format === 'singles'
+                    ? holeScore.team2Player1
+                    : holeScore.team2Score
+                }))
+              }
+            ]
+          }
+          format="match_play"
+          currentHole={currentHole}
+        />
       </div>
     </div>
   );

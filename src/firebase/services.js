@@ -9,9 +9,11 @@ import {
   onSnapshot,
   query,
   orderBy,
-  setDoc
+  setDoc,
+  where
 } from 'firebase/firestore';
-import { db } from './config';
+import { createUserWithEmailAndPassword, updateProfile, signInWithEmailAndPassword } from 'firebase/auth';
+import { db, auth } from './config';
 
 // Collections
 const COLLECTIONS = {
@@ -88,22 +90,84 @@ export const addPlayer = async (playerData) => {
   // Ensure handicap is stored as decimal number with 1 decimal place
   const handicap = playerData.handicap ? parseFloat(parseFloat(playerData.handicap).toFixed(1)) : 0.0;
 
-  const playerWithDefaults = {
-    name: playerData.name,
-    handicap: handicap,
-    teamId: playerData.teamId || null,
-    handicapHistory: [{
-      handicap: handicap,
-      date: new Date().toISOString(),
-      tournamentId: playerData.tournamentId || null,
-      reason: 'Initial handicap'
-    }],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
+  // Store current user (admin) to sign back in after creating player
+  const currentUser = auth.currentUser;
+  const isAdmin = currentUser && currentUser.email === 'admin@rydercup.local';
 
-  const docRef = await addDoc(collection(db, COLLECTIONS.PLAYERS), playerWithDefaults);
-  return docRef.id;
+  try {
+    // 1. Create Firebase Auth account
+    const email = `${playerData.name.toLowerCase().replace(/\s+/g, '.')}@rydercup.local`;
+    const commonPassword = 'rydercup2025';
+
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      commonPassword
+    );
+
+    const userId = userCredential.user.uid;
+
+    // 2. Update auth user display name
+    await updateProfile(userCredential.user, {
+      displayName: playerData.name
+    });
+
+    // 3. Create player document with userId link
+    const playerWithDefaults = {
+      name: playerData.name,
+      handicap: handicap,
+      teamId: playerData.teamId || null,
+      userId: userId, // Link to Firebase Auth UID
+      email: email, // Store email for login reference
+      handicapHistory: [{
+        handicap: handicap,
+        date: new Date().toISOString(),
+        tournamentId: playerData.tournamentId || null,
+        reason: 'Initial handicap'
+      }],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const docRef = await addDoc(collection(db, COLLECTIONS.PLAYERS), playerWithDefaults);
+
+    console.log(`✅ Created player account: ${playerData.name} (${email})`);
+
+    // 4. Sign admin back in if they were logged in
+    if (isAdmin) {
+      // Note: Admin password is hardcoded here - should match AdminLogin component
+      // This is a workaround because createUserWithEmailAndPassword auto-signs in
+      try {
+        await signInWithEmailAndPassword(auth, 'admin@rydercup.local', 'Greenacres');
+        console.log('✅ Admin re-authenticated');
+      } catch (error) {
+        console.error('⚠️ Could not re-authenticate admin:', error);
+      }
+    }
+
+    return docRef.id;
+  } catch (error) {
+    // If auth account creation fails (e.g., email already exists), still create player doc
+    console.error('Error creating auth account:', error);
+
+    // Create player without userId
+    const playerWithDefaults = {
+      name: playerData.name,
+      handicap: handicap,
+      teamId: playerData.teamId || null,
+      handicapHistory: [{
+        handicap: handicap,
+        date: new Date().toISOString(),
+        tournamentId: playerData.tournamentId || null,
+        reason: 'Initial handicap'
+      }],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const docRef = await addDoc(collection(db, COLLECTIONS.PLAYERS), playerWithDefaults);
+    return docRef.id;
+  }
 };
 
 export const updatePlayer = async (playerId, playerData) => {
@@ -158,6 +222,26 @@ export const subscribeToPlayer = (playerId, callback) => {
   });
 };
 
+// Get player by Firebase Auth userId
+export const getPlayerByUserId = async (userId) => {
+  try {
+    const q = query(
+      collection(db, COLLECTIONS.PLAYERS),
+      where('userId', '==', userId)
+    );
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const doc = querySnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching player by userId:', error);
+    return null;
+  }
+};
+
 // Course operations
 export const getCourse = async () => {
   const docRef = doc(db, COLLECTIONS.COURSE, 'current');
@@ -200,15 +284,30 @@ export const getSavedCourses = async () => {
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-export const saveCourseConfiguration = async (courseName, holes) => {
-  const courseData = {
-    name: courseName,
-    holes: holes,
-    totalPar: holes.reduce((sum, h) => sum + (h.par || 0), 0),
-    savedAt: new Date().toISOString()
+export const saveCourseConfiguration = async (courseData) => {
+  // courseData should include: courseName, teeBox, teeColor, holes[], totalYardage (in meters), rating, slope
+  const fullCourseData = {
+    courseName: courseData.courseName,
+    teeBox: courseData.teeBox,
+    teeColor: courseData.teeColor || 'white',
+    holes: courseData.holes, // Array of 18 holes with par, strokeIndex, yardage (distance in meters)
+    totalPar: courseData.holes.reduce((sum, h) => sum + (h.par || 0), 0),
+    totalYardage: courseData.holes.reduce((sum, h) => sum + (h.yardage || 0), 0),
+    rating: courseData.rating || null, // Course rating (scratch golfer expected score)
+    slope: courseData.slope || 113, // Slope rating (113 = average)
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
-  const docRef = await addDoc(collection(db, COLLECTIONS.SAVED_COURSES), courseData);
+  const docRef = await addDoc(collection(db, COLLECTIONS.SAVED_COURSES), fullCourseData);
   return docRef.id;
+};
+
+export const updateSavedCourse = async (courseId, courseData) => {
+  const docRef = doc(db, COLLECTIONS.SAVED_COURSES, courseId);
+  await updateDoc(docRef, {
+    ...courseData,
+    updatedAt: new Date().toISOString()
+  });
 };
 
 export const loadCourseConfiguration = async (courseId, holes) => {

@@ -1,0 +1,382 @@
+.playoff-modal {
+  max-width: 900px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-subtitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+/* Tied Players Section */
+.tied-players-section {
+  margin-bottom: 2rem;
+}
+
+.tied-players-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.tied-players-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.tied-player-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.player-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.player-handicap {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.player-score {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Playoff Method Section */
+.playoff-method-section {
+  margin-bottom: 2rem;
+}
+
+.playoff-method-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.method-options {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.method-option {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.method-option:hover {
+  border-color: #667eea;
+  background: #f7fafc;
+}
+
+.method-option.selected {
+  border-color: #667eea;
+  background: #edf2f7;
+}
+
+.method-option input[type="radio"] {
+  margin-right: 1rem;
+  cursor: pointer;
+}
+
+.method-content {
+  flex: 1;
+}
+
+.method-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #2d3748;
+  margin-bottom: 0.25rem;
+}
+
+.method-description {
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+/* Countback Section */
+.countback-section {
+  margin-bottom: 2rem;
+}
+
+.countback-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.countback-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.countback-option {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.countback-option:hover {
+  border-color: #667eea;
+}
+
+.countback-option.selected {
+  border-color: #667eea;
+  background: #edf2f7;
+}
+
+.countback-option input[type="radio"] {
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+.countback-option span {
+  font-size: 0.9rem;
+  color: #2d3748;
+}
+
+/* Countback Results */
+.countback-results {
+  background: #f7fafc;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.countback-results h4 {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  color: #2d3748;
+}
+
+.countback-standings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.countback-player {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.countback-player.winner {
+  border-color: #f6ad55;
+  background: #fffaf0;
+  box-shadow: 0 4px 6px rgba(246, 173, 85, 0.1);
+}
+
+.countback-position {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #718096;
+  min-width: 3rem;
+  text-align: center;
+}
+
+.countback-player.winner .countback-position {
+  color: #f6ad55;
+}
+
+.countback-player-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.countback-player-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #2d3748;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.winner-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #f6ad55;
+}
+
+.countback-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hole-point {
+  font-size: 0.8rem;
+  color: #4a5568;
+  background: #edf2f7;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.countback-score {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+  min-width: 5rem;
+  text-align: right;
+}
+
+.countback-player.winner .countback-score {
+  color: #f6ad55;
+}
+
+/* Winner Selection Section */
+.winner-selection-section {
+  margin-bottom: 2rem;
+}
+
+.winner-selection-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.winner-selection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.winner-option {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.winner-option:hover {
+  border-color: #667eea;
+  background: #f7fafc;
+}
+
+.winner-option.selected {
+  border-color: #667eea;
+  background: #edf2f7;
+}
+
+.winner-option input[type="radio"] {
+  margin-right: 1rem;
+  cursor: pointer;
+}
+
+.winner-option-content {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.winner-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #2d3748;
+}
+
+.winner-points {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.selected-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #667eea;
+  margin-left: 1rem;
+}
+
+/* Spinner */
+.spinner-small {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 0.5rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .playoff-modal {
+    width: 100%;
+    max-height: 95vh;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .tied-players-list {
+    grid-template-columns: 1fr;
+  }
+
+  .countback-options {
+    grid-template-columns: 1fr;
+  }
+
+  .countback-breakdown {
+    font-size: 0.75rem;
+  }
+
+  .countback-player {
+    flex-wrap: wrap;
+  }
+
+  .countback-player-info {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .countback-score {
+    width: 100%;
+    text-align: left;
+  }
+}

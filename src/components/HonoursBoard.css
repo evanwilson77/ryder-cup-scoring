@@ -1,0 +1,717 @@
+.honours-board {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  padding: 1rem;
+}
+
+.honours-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Header */
+.honours-header {
+  background: linear-gradient(135deg, #3d2817 0%, #2a1810 100%);
+  padding: 2rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 2px solid #5a3d2a;
+}
+
+.header-content {
+  flex: 1;
+  text-align: center;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.honours-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #d4af37;
+}
+
+.honours-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #d4af37;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-family: 'Georgia', serif;
+}
+
+.header-subtitle {
+  font-size: 1.1rem;
+  color: #c9a961;
+  margin: 0;
+  font-style: italic;
+  font-family: 'Georgia', serif;
+}
+
+/* Series Selector */
+.series-selector {
+  background: linear-gradient(135deg, #3d2817 0%, #2a1810 100%);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 2px solid #5a3d2a;
+}
+
+.series-selector h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #d4af37;
+  margin: 0 0 1rem 0;
+  font-family: 'Georgia', serif;
+}
+
+.series-tabs {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.series-tab {
+  flex: 1;
+  min-width: 200px;
+  padding: 1rem;
+  border: 2px solid #5a3d2a;
+  border-radius: 8px;
+  background: rgba(61, 40, 23, 0.5);
+  color: #c9a961;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Georgia', serif;
+}
+
+.series-tab:hover {
+  background: rgba(61, 40, 23, 0.8);
+  border-color: #d4af37;
+}
+
+.series-tab.active {
+  background: #d4af37;
+  color: #2a1810;
+  border-color: #d4af37;
+  box-shadow: 0 4px 8px rgba(212, 175, 55, 0.4);
+}
+
+.tab-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.tab-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.tab-format {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* Series Header Plaque */
+.series-header-plaque {
+  background: linear-gradient(135deg, #3d2817 0%, #2a1810 100%);
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 3px solid #d4af37;
+  position: relative;
+}
+
+.series-header-plaque::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.plaque-content {
+  text-align: center;
+}
+
+.series-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #d4af37;
+  margin: 0 0 1rem 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-family: 'Georgia', serif;
+  letter-spacing: 0.05em;
+}
+
+.series-details {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.1rem;
+  color: #c9a961;
+  margin-bottom: 1rem;
+  font-family: 'Georgia', serif;
+}
+
+.separator {
+  color: #d4af37;
+}
+
+.series-description {
+  font-size: 1rem;
+  color: #b39560;
+  margin: 0;
+  font-style: italic;
+  font-family: 'Georgia', serif;
+}
+
+/* Champions Section */
+.champions-section {
+  background: linear-gradient(135deg, #3d2817 0%, #2a1810 100%);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 2px solid #5a3d2a;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #5a3d2a;
+}
+
+.section-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: #d4af37;
+}
+
+.section-header h3 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #d4af37;
+  margin: 0;
+  font-family: 'Georgia', serif;
+}
+
+.champions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.champion-entry {
+  display: grid;
+  grid-template-columns: 100px 1fr 200px;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: rgba(61, 40, 23, 0.3);
+  border-radius: 8px;
+  border-left: 4px solid #d4af37;
+  transition: all 0.2s;
+}
+
+.champion-entry:hover {
+  background: rgba(61, 40, 23, 0.5);
+  transform: translateX(4px);
+}
+
+.champion-year {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #d4af37;
+  font-family: 'Georgia', serif;
+}
+
+.champion-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #e8d4a4;
+  font-family: 'Georgia', serif;
+}
+
+.champion-score {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #c9a961;
+  text-align: right;
+  font-family: 'Georgia', serif;
+}
+
+/* Records Section */
+.records-section {
+  background: linear-gradient(135deg, #3d2817 0%, #2a1810 100%);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 2px solid #5a3d2a;
+}
+
+.records-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.record-card {
+  padding: 2rem;
+  background: rgba(61, 40, 23, 0.3);
+  border-radius: 8px;
+  border: 2px solid #5a3d2a;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.record-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(212, 175, 55, 0.2);
+  border-color: #d4af37;
+}
+
+.record-card.most-wins {
+  border-color: #d4af37;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(61, 40, 23, 0.3) 100%);
+}
+
+.record-label {
+  font-size: 0.95rem;
+  color: #b39560;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: 'Georgia', serif;
+}
+
+.record-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #d4af37;
+  margin-bottom: 0.5rem;
+  font-family: 'Georgia', serif;
+}
+
+.record-detail {
+  font-size: 1.1rem;
+  color: #c9a961;
+  margin-bottom: 0.5rem;
+  font-family: 'Georgia', serif;
+}
+
+.record-years {
+  font-size: 0.9rem;
+  color: #b39560;
+  font-family: 'Georgia', serif;
+}
+
+/* Player Statistics */
+.player-stats-section {
+  background: linear-gradient(135deg, #3d2817 0%, #2a1810 100%);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 2px solid #5a3d2a;
+}
+
+.stats-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(61, 40, 23, 0.5);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #d4af37;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: 'Georgia', serif;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(61, 40, 23, 0.2);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  border: 1px solid rgba(90, 61, 42, 0.5);
+  transition: all 0.2s;
+  align-items: center;
+  font-family: 'Georgia', serif;
+}
+
+.stats-row:hover {
+  background: rgba(61, 40, 23, 0.4);
+  border-color: #d4af37;
+}
+
+.col-player {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e8d4a4;
+}
+
+.rank-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.rank-icon.rank-1 {
+  color: #d4af37;
+}
+
+.rank-icon.rank-2 {
+  color: #c0c0c0;
+}
+
+.rank-icon.rank-3 {
+  color: #cd7f32;
+}
+
+.col-wins,
+.col-runnerup,
+.col-third,
+.col-best {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #c9a961;
+}
+
+/* No Data */
+.no-data {
+  text-align: center;
+  padding: 3rem;
+  color: #b39560;
+  font-style: italic;
+  font-family: 'Georgia', serif;
+}
+
+.no-data p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(212, 175, 55, 0.3);
+  border-top-color: #d4af37;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+  .champion-entry {
+    grid-template-columns: 80px 1fr 150px;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .stats-header,
+  .stats-row {
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    font-size: 0.85rem;
+  }
+
+  .col-third {
+    display: none;
+  }
+
+  .records-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .honours-board {
+    padding: 0.5rem;
+  }
+
+  .honours-header {
+    flex-direction: column;
+    padding: 1.5rem 1rem;
+  }
+
+  .honours-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .series-tabs {
+    flex-direction: column;
+  }
+
+  .series-tab {
+    width: 100%;
+  }
+
+  .series-title {
+    font-size: 1.75rem;
+  }
+
+  .champion-entry {
+    grid-template-columns: 60px 1fr;
+    gap: 0.75rem;
+  }
+
+  .champion-score {
+    grid-column: 2;
+    text-align: left;
+    font-size: 0.95rem;
+  }
+
+  .stats-header,
+  .stats-row {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+
+  .col-runnerup,
+  .col-best {
+    display: none;
+  }
+
+  .record-value {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .honours-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .series-title {
+    font-size: 1.5rem;
+  }
+
+  .champion-year {
+    font-size: 1rem;
+  }
+
+  .champion-name {
+    font-size: 1rem;
+  }
+
+  .stats-header,
+  .stats-row {
+    grid-template-columns: 1fr 80px;
+  }
+
+  .col-runnerup {
+    display: none;
+  }
+}
+
+/* Admin Controls */
+.admin-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.admin-controls .button {
+  white-space: nowrap;
+}
+
+.admin-controls .icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Manual Entry Styling */
+.champion-entry.manual-entry {
+  background: rgba(59, 130, 246, 0.05);
+  border-left: 3px solid #3b82f6;
+}
+
+.entry-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.entry-actions .button {
+  padding: 0.375rem;
+  min-width: auto;
+}
+
+.entry-actions .icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 0.75rem;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+
+.close-button:hover {
+  color: #1f2937;
+}
+
+.close-button .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.form-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.field-hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.modal-footer .button {
+  min-width: 100px;
+}
+
+@media (max-width: 768px) {
+  .admin-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .admin-controls .button {
+    width: 100%;
+  }
+
+  .honours-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .entry-actions {
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+}
+

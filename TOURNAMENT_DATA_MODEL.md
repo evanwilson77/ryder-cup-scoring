@@ -41,12 +41,12 @@ Represents a recurring tournament type with specific format and rules.
 
 ### 2. Tournaments (`tournaments`)
 
-Individual tournament editions within a series.
+Individual tournament editions within a series, or standalone tournaments.
 
 ```javascript
 {
   id: string,                    // Auto-generated Firestore ID
-  seriesId: string,              // Reference to tournament series
+  seriesId: string | null,       // Reference to tournament series (null for standalone tournaments)
   name: string,                  // Tournament name
   edition: string | null,        // "2025" or "October 2025"
 
@@ -71,11 +71,8 @@ Individual tournament editions within a series.
   winnerDetails: Object | null,  // Score, margin, etc.
   results: Array,                // All player/team results
 
-  // Match data (Ryder Cup)
-  matches: Array,                // Array of match objects
-
-  // Scoring data (Stableford/Stroke)
-  scorecards: Array,             // Array of scorecard objects
+  // Rounds (NEW)
+  rounds: Array,                 // Array of round objects (see Round structure below)
 
   // Media
   photos: Array,                 // Array of photo URLs
@@ -93,6 +90,103 @@ Individual tournament editions within a series.
 1. **setup** - Tournament created, configuring participants
 2. **in_progress** - Tournament active, scores being recorded
 3. **completed** - Tournament finished, winner declared
+
+#### Round Structure
+
+Each tournament can have one or more rounds. A round represents a single day/session of play.
+
+```javascript
+{
+  id: string,                    // Unique round ID (e.g., "round1", "round2")
+  roundNumber: number,           // 1, 2, 3, etc.
+  name: string,                  // "Round 1", "Morning Foursomes", "Final Round", etc.
+  date: string,                  // ISO date for this round
+  status: string,                // 'not_started', 'in_progress', 'completed'
+
+  // Course Information
+  courseId: string | null,       // Reference to saved course (if using saved course)
+  courseName: string,            // Course name for this round
+  courseData: Object,            // Hole data (par, stroke index) for this round
+
+  // Match/Scorecard Data (format-specific)
+  matches: Array,                // For match play formats (Ryder Cup)
+  scorecards: Array,             // For stroke/stableford formats
+
+  // Round Results
+  roundResults: Array,           // Results specific to this round
+
+  createdAt: string,
+  updatedAt: string
+}
+```
+
+**Course Data Structure within Round:**
+```javascript
+courseData: {
+  holes: [
+    {
+      number: 1,
+      par: 4,
+      strokeIndex: 7
+    },
+    // ... 18 holes total
+  ],
+  totalPar: 72
+}
+```
+
+**Example - Single Round Tournament:**
+```javascript
+rounds: [
+  {
+    id: "round1",
+    roundNumber: 1,
+    name: "Round 1",
+    date: "2025-11-29",
+    status: "not_started",
+    courseName: "Akarana Golf Course",
+    courseData: { holes: [...], totalPar: 72 },
+    matches: [],
+    scorecards: []
+  }
+]
+```
+
+**Example - Multi-Day Ryder Cup:**
+```javascript
+rounds: [
+  {
+    id: "round1",
+    roundNumber: 1,
+    name: "Day 1 - Morning Foursomes",
+    date: "2025-11-29",
+    status: "completed",
+    courseName: "Akarana Golf Course",
+    courseData: { holes: [...], totalPar: 72 },
+    matches: [/* 4 foursomes matches */]
+  },
+  {
+    id: "round2",
+    roundNumber: 2,
+    name: "Day 1 - Afternoon Fourball",
+    date: "2025-11-29",
+    status: "in_progress",
+    courseName: "Akarana Golf Course",
+    courseData: { holes: [...], totalPar: 72 },
+    matches: [/* 4 fourball matches */]
+  },
+  {
+    id: "round3",
+    roundNumber: 3,
+    name: "Day 2 - Singles",
+    date: "2025-11-30",
+    status: "not_started",
+    courseName: "Akarana Golf Course",
+    courseData: { holes: [...], totalPar: 72 },
+    matches: [/* 12 singles matches */]
+  }
+]
+```
 
 ### 3. Honours Board (`honoursBoard`)
 

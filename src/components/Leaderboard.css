@@ -2,6 +2,40 @@
   max-width: 1200px;
 }
 
+/* Tournament Selector */
+.tournament-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: #f7fafc;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.tournament-selector label {
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.tournament-select {
+  flex: 1;
+  min-width: 300px;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: white;
+  cursor: pointer;
+}
+
+.tournament-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
 .scoreboard {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -10,7 +44,14 @@
 .scoreboard h2 {
   color: white;
   border-bottom-color: rgba(255, 255, 255, 0.3);
+  margin-bottom: 0.5rem;
+}
+
+.tournament-info {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
   margin-bottom: 1.5rem;
+  text-transform: capitalize;
 }
 
 .score-display {
@@ -205,6 +246,18 @@
   flex-wrap: wrap;
 }
 
+.tournament-summary {
+  text-align: center;
+  padding: 2rem 1.5rem;
+}
+
+.tournament-status {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
 @media (max-width: 768px) {
   .score-display {
     grid-template-columns: 1fr;
@@ -252,4 +305,48 @@
   .quick-actions button {
     width: 100%;
   }
+
+  .floating-media-button {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .floating-media-button .icon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+/* Floating Media Button */
+.floating-media-button {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 4rem;
+  height: 4rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+  transition: all 0.3s ease;
+  z-index: 100;
+  color: white;
+}
+
+.floating-media-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 15px 30px rgba(59, 130, 246, 0.6);
+}
+
+.floating-media-button:active {
+  transform: scale(0.95);
+}
+
+.floating-media-button .icon {
+  width: 2rem;
+  height: 2rem;
 }

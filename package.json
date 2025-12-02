@@ -20,6 +20,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:once": "react-scripts test --watchAll=false",
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "test:report": "node run-tests.js",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

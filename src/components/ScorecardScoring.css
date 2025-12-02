@@ -1,0 +1,588 @@
+.scorecard-scoring {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1rem;
+  padding-bottom: 2rem;
+}
+
+.scoring-header-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.header-title {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.header-title h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.round-name {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.auto-save-indicator {
+  font-size: 0.875rem;
+  opacity: 0.8;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Current Hole Scoring */
+.current-hole-scoring {
+  margin-bottom: 1rem;
+}
+
+.hole-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.hole-header h3 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.hole-info {
+  display: flex;
+  gap: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.hole-par {
+  color: #2b6cb0;
+}
+
+.hole-si {
+  color: #718096;
+}
+
+.score-entry {
+  margin-bottom: 1.5rem;
+}
+
+.score-entry label {
+  display: block;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.score-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-button {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 0.75rem;
+  border: 2px solid #e2e8f0;
+  background: white;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2d3748;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.score-button:hover:not(:disabled) {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+  transform: scale(1.05);
+}
+
+.score-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.score-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.score-button.decrement {
+  color: #e53e3e;
+}
+
+.score-button.increment {
+  color: #38a169;
+}
+
+.score-input {
+  width: 6rem;
+  height: 4rem;
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  border: 3px solid #667eea;
+  border-radius: 0.75rem;
+  color: #1a202c;
+}
+
+.score-input:focus {
+  outline: none;
+  border-color: #5a67d8;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.score-preview {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.preview-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+}
+
+.preview-item .label {
+  font-weight: 600;
+  color: #718096;
+}
+
+.preview-item .value {
+  font-weight: 700;
+  color: #2d3748;
+  font-size: 1.25rem;
+}
+
+.preview-item .value.stableford {
+  color: #38a169;
+}
+
+.scoring-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.scoring-actions button {
+  flex: 1;
+}
+
+/* Score Summary */
+.score-summary-card {
+  margin-bottom: 1rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 0.5rem;
+}
+
+.summary-item .label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #718096;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.summary-item .value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.summary-item .value.points {
+  color: #38a169;
+}
+
+/* Hole Navigation */
+.hole-navigation {
+  margin-bottom: 1rem;
+}
+
+.hole-navigation h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.hole-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 0.5rem;
+}
+
+.hole-button {
+  aspect-ratio: 1;
+  border: 2px solid #e2e8f0;
+  background: white;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hole-button:hover {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+.hole-button.active {
+  background: #667eea;
+  border-color: #5a67d8;
+  color: white;
+}
+
+.hole-button.scored:not(.active) {
+  background: #e6fffa;
+  border-color: #38a169;
+}
+
+.hole-number {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.hole-score {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #38a169;
+}
+
+.hole-button.active .hole-score {
+  color: white;
+}
+
+/* Scorecard Table - wrapper only, styles come from shared ScoreCard.css */
+.scorecard-table-card {
+  margin-bottom: 1rem;
+}
+
+/* Leaderboard Summary */
+.leaderboard-summary {
+  margin-bottom: 1rem;
+}
+
+.leaderboard-summary h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.leaderboard-entry {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 0.5rem;
+  border: 2px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.leaderboard-entry.current-player {
+  background: #ebf8ff;
+  border-color: #667eea;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+.leaderboard-entry .position {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #667eea;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.leaderboard-entry.current-player .position {
+  background: #5a67d8;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+
+.leaderboard-entry .player-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.leaderboard-entry .player-name {
+  font-weight: 600;
+  color: #1a202c;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leaderboard-entry .player-status {
+  font-size: 0.75rem;
+  color: #718096;
+  margin-top: 0.125rem;
+}
+
+.leaderboard-entry .player-scores {
+  display: flex;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.leaderboard-entry .score-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 3rem;
+}
+
+.leaderboard-entry .score-label {
+  font-size: 0.625rem;
+  color: #718096;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.leaderboard-entry .score-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.leaderboard-entry .score-value.points {
+  color: #38a169;
+}
+
+/* Loading */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .scorecard-scoring {
+    padding: 0.5rem;
+  }
+
+  .hole-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .summary-item {
+    padding: 0.75rem;
+  }
+
+  .summary-item .value {
+    font-size: 1.5rem;
+  }
+
+  .score-button {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 1.75rem;
+  }
+
+  .score-input {
+    width: 5rem;
+    height: 3.5rem;
+    font-size: 2rem;
+  }
+
+  .leaderboard-entry .player-scores {
+    gap: 0.5rem;
+  }
+
+  .leaderboard-entry .score-item {
+    min-width: 2.5rem;
+  }
+
+  .floating-media-button {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .floating-media-button .icon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+/* Floating Media Button */
+.floating-media-button {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 4rem;
+  height: 4rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+  transition: all 0.3s ease;
+  z-index: 100;
+  color: white;
+}
+
+.floating-media-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 15px 30px rgba(59, 130, 246, 0.6);
+}
+
+.floating-media-button:active {
+  transform: scale(0.95);
+}
+
+.floating-media-button .icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* Completed Scorecard Notices */
+.completed-notice,
+.admin-edit-notice {
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  border-left: 4px solid;
+}
+
+.completed-notice {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+.admin-edit-notice {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1e40af;
+}
+
+.notice-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.notice-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.notice-text h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.notice-text p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Submit Scorecard Section */
+.submit-scorecard-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.submit-scorecard-button {
+  min-width: 280px;
+  font-size: 1rem;
+  padding: 0.875rem 1.5rem;
+  font-weight: 700;
+}
+
+.submit-note {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #718096;
+  text-align: center;
+  max-width: 400px;
+}

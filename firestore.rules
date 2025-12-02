@@ -1,7 +1,105 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'admin@rydercup.local';
+    }
+
+    // Players collection
+    match /players/{playerId} {
+      // Allow unauthenticated read for login screen
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Teams collection
+    match /teams/{teamId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Tournament collection
+    match /tournament/{tournamentId} {
+      allow read: if isSignedIn();
+      allow create, delete: if isAdmin();
+      allow update: if isSignedIn(); // Players can update for scoring
+    }
+
+    // Tournaments collection
+    match /tournaments/{tournamentId} {
+      allow read: if isSignedIn();
+      allow create, delete: if isAdmin();
+      allow update: if isSignedIn(); // Players can update for scoring
+    }
+
+    // Matches collection
+    match /matches/{matchId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn(); // Players can score matches
+    }
+
+    // Scores collection
+    match /scores/{scoreId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn(); // Players can enter scores
+    }
+
+    // Course configuration
+    match /course/{courseId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /holes/{holeId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Saved courses library
+    match /savedCourses/{courseId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Series management
+    match /series/{seriesId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Tournament series collection
+    match /tournamentSeries/{seriesId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Honours board - public read
+    match /honoursBoard/{entryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Media/photos
+    match /media/{mediaId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn(); // Players can upload
+      allow update, delete: if isAdmin();
+    }
+
+    // Anomaly logs - players can write, only admin can read
+    match /anomalyLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn(); // Anyone can log anomalies
+      allow update, delete: if false; // Logs are immutable
+    }
+
+    // Any other collections - deny by default
     match /{document=**} {
       allow read, write: if false;
     }

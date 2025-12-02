@@ -1,0 +1,329 @@
+.scramble-config-modal {
+  max-width: 800px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Config Sections */
+.config-section {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.config-section:last-of-type {
+  border-bottom: none;
+}
+
+.config-section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 1rem;
+}
+
+.config-section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 0.75rem;
+}
+
+.helper-text {
+  font-size: 0.875rem;
+  color: #718096;
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+/* Team Size Options */
+.team-size-options {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.size-option {
+  flex: 1;
+  min-width: 150px;
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.size-option:hover {
+  border-color: #667eea;
+  background: #f7fafc;
+}
+
+.size-option.selected {
+  border-color: #667eea;
+  background: #edf2f7;
+}
+
+.size-option input[type="radio"] {
+  margin-right: 0.75rem;
+  cursor: pointer;
+}
+
+.size-option span {
+  font-weight: 500;
+  color: #2d3748;
+}
+
+/* Handicap Method Options */
+.handicap-method-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.method-option {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.method-option:hover {
+  border-color: #667eea;
+  background: #f7fafc;
+}
+
+.method-option.selected {
+  border-color: #667eea;
+  background: #edf2f7;
+}
+
+.method-option input[type="radio"] {
+  margin-right: 1rem;
+  cursor: pointer;
+}
+
+.method-content {
+  flex: 1;
+}
+
+.method-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #2d3748;
+  margin-bottom: 0.25rem;
+}
+
+.method-description {
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+/* Custom Percentages */
+.custom-percentages-section {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.percentage-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.percentage-input-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.percentage-input-group label {
+  flex: 1;
+  font-size: 0.9rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 120px;
+}
+
+.input-with-unit input {
+  width: 80px;
+  padding: 0.5rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.input-with-unit .unit {
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.percentage-total {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 4px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.percentage-total .warning {
+  color: #f6ad55;
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+/* Drive Requirements */
+.drive-requirement-config {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 8px;
+}
+
+.drive-requirement-config label {
+  display: block;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+}
+
+.drive-input {
+  width: 100px;
+  padding: 0.5rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Checkbox Options */
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+}
+
+.checkbox-option input[type="checkbox"] {
+  margin-right: 0.75rem;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.checkbox-option span {
+  font-size: 0.95rem;
+  color: #2d3748;
+}
+
+/* Rules Options */
+.rules-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.max-handicap-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.max-handicap-input {
+  width: 80px;
+  padding: 0.5rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+/* Configuration Summary */
+.config-summary {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+}
+
+.config-summary h4 {
+  color: white;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.config-summary ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.config-summary li {
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.config-summary strong {
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .scramble-config-modal {
+    width: 100%;
+    max-height: 95vh;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .team-size-options {
+    flex-direction: column;
+  }
+
+  .size-option {
+    width: 100%;
+  }
+
+  .percentage-input-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .percentage-input-group label {
+    width: 100%;
+  }
+
+  .input-with-unit {
+    width: 100%;
+  }
+
+  .max-handicap-option {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .max-handicap-input {
+    width: 100%;
+  }
+}

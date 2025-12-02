@@ -1,0 +1,268 @@
+.media-viewer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.media-viewer-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.media-viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.viewer-title {
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.media-counter {
+  color: #d1d5db;
+}
+
+.viewer-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.viewer-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+}
+
+.viewer-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.viewer-button.delete {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.viewer-button.delete:hover {
+  background: rgba(239, 68, 68, 0.4);
+}
+
+.viewer-button .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.media-viewer-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  position: relative;
+  min-height: 0;
+}
+
+.media-display {
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewer-image {
+  max-width: 100%;
+  max-height: calc(100vh - 250px);
+  object-fit: contain;
+  border-radius: 0.5rem;
+}
+
+.viewer-video {
+  max-width: 100%;
+  max-height: calc(100vh - 250px);
+  border-radius: 0.5rem;
+}
+
+.nav-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+  z-index: 10;
+}
+
+.nav-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.nav-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.nav-button.prev {
+  left: 1rem;
+}
+
+.nav-button.next {
+  right: 1rem;
+}
+
+.nav-button .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.media-viewer-info {
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.media-caption {
+  margin-bottom: 1rem;
+}
+
+.media-caption p {
+  margin: 0;
+  color: white;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.media-metadata {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.metadata-row {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.metadata-label {
+  color: #9ca3af;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.metadata-value {
+  color: #e5e7eb;
+}
+
+.category-tag {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 0.25rem;
+  text-transform: capitalize;
+  color: #93c5fd;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .media-viewer-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .viewer-button {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .viewer-button .icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .nav-button {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .nav-button .icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .nav-button.prev {
+    left: 0.5rem;
+  }
+
+  .nav-button.next {
+    right: 0.5rem;
+  }
+
+  .viewer-image,
+  .viewer-video {
+    max-height: calc(100vh - 300px);
+  }
+
+  .media-viewer-info {
+    padding: 1rem;
+  }
+
+  .media-metadata {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Scrollbar styling for info panel */
+.media-viewer-info::-webkit-scrollbar {
+  width: 8px;
+}
+
+.media-viewer-info::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.media-viewer-info::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.media-viewer-info::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

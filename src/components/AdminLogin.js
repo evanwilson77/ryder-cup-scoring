@@ -5,8 +5,8 @@ import { LockClosedIcon } from '@heroicons/react/24/outline';
 
 function AdminLogin() {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const [formData, setFormData] = useState({ username: '', password: '' });
+  const { loginAsAdmin } = useAuth();
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -15,12 +15,12 @@ function AdminLogin() {
     setError('');
     setLoading(true);
 
-    const success = login(formData.username, formData.password);
-
-    if (success) {
-      navigate('/');
-    } else {
-      setError('Invalid username or password');
+    try {
+      await loginAsAdmin(password);
+      navigate('/tournaments');
+    } catch (error) {
+      console.error('Admin login error:', error);
+      setError('Invalid password');
       setLoading(false);
     }
   };
@@ -46,31 +46,16 @@ function AdminLogin() {
               </div>
             )}
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Username
-              </label>
-              <input
-                type="text"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Enter username"
-                autoComplete="username"
-                required
-              />
-            </div>
-
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password
+                Admin Password
               </label>
               <input
                 type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Enter password"
+                placeholder="Enter admin password"
                 autoComplete="current-password"
                 required
               />
@@ -87,10 +72,10 @@ function AdminLogin() {
 
           <div className="mt-6 text-center">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/player-login')}
               className="text-sm text-gray-600 hover:text-primary-600 transition-colors"
             >
-              ← Back to Home
+              ← Back to Player Login
             </button>
           </div>
         </div>

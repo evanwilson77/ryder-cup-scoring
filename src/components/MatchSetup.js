@@ -174,7 +174,7 @@ function MatchSetup() {
           </div>
         ) : (
           matches.map(match => (
-            <div key={match.id} className="card match-card">
+            <div key={match.id} className={`card match-card ${match.status.replace('_', '-')}`}>
               <div className="match-header">
                 <div>
                   <h3>{match.name}</h3>
@@ -204,7 +204,7 @@ function MatchSetup() {
                   <div className="team-side" style={{ borderLeftColor: team1?.color }}>
                     <h4 style={{ color: team1?.color }}>{team1?.name}</h4>
                     <ul>
-                      {match.team1Players.map(playerId => (
+                      {match.team1Players?.map(playerId => (
                         <li key={playerId}>{getPlayerName(playerId)}</li>
                       ))}
                     </ul>
@@ -215,7 +215,7 @@ function MatchSetup() {
                   <div className="team-side" style={{ borderLeftColor: team2?.color }}>
                     <h4 style={{ color: team2?.color }}>{team2?.name}</h4>
                     <ul>
-                      {match.team2Players.map(playerId => (
+                      {match.team2Players?.map(playerId => (
                         <li key={playerId}>{getPlayerName(playerId)}</li>
                       ))}
                     </ul>

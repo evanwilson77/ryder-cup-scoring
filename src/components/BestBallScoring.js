@@ -167,11 +167,16 @@ function BestBallScoring() {
     let bestPoints = null;
     let bestPlayer = null;
 
+    // Best Ball handicap allowance: 90% for 2-person, 85% for 4-person
+    const handicapAllowance = teamPlayers.length <= 2 ? 0.90 : 0.85;
+
     teamPlayers.forEach(player => {
       const playerHole = playerScores[player.id]?.[holeIndex];
       if (!playerHole?.grossScore) return;
 
-      const strokesReceived = calculateStrokesReceived(player.handicap || 0, holeData.strokeIndex);
+      // Apply handicap allowance for best ball format
+      const adjustedHandicap = (player.handicap || 0) * handicapAllowance;
+      const strokesReceived = calculateStrokesReceived(adjustedHandicap, holeData.strokeIndex);
       const netScore = playerHole.grossScore - strokesReceived;
 
       if (scoringFormat === 'stableford') {
@@ -201,11 +206,16 @@ function BestBallScoring() {
     let bestPoints = null;
     let bestPlayer = null;
 
+    // Best Ball handicap allowance: 90% for 2-person, 85% for 4-person
+    const handicapAllowance = teamPlayers.length <= 2 ? 0.90 : 0.85;
+
     teamPlayers.forEach(player => {
       const playerHole = scores[player.id]?.[holeIndex];
       if (!playerHole?.grossScore) return;
 
-      const strokesReceived = calculateStrokesReceived(player.handicap || 0, holeData.strokeIndex);
+      // Apply handicap allowance for best ball format
+      const adjustedHandicap = (player.handicap || 0) * handicapAllowance;
+      const strokesReceived = calculateStrokesReceived(adjustedHandicap, holeData.strokeIndex);
       const netScore = playerHole.grossScore - strokesReceived;
 
       if (scoringFormat === 'stableford') {
@@ -272,14 +282,19 @@ function BestBallScoring() {
   const getScorecardData = () => {
     const scoringData = [];
 
+    // Best Ball handicap allowance: 90% for 2-person, 85% for 4-person
+    const handicapAllowance = teamPlayers.length <= 2 ? 0.90 : 0.85;
+
     // Add each player's scores
     teamPlayers.forEach(player => {
       const playerHoles = playerScores[player.id] || [];
+      const adjustedHandicap = (player.handicap || 0) * handicapAllowance;
+
       const transformedScores = playerHoles.map((hole, idx) => {
         if (!hole?.grossScore || !round?.courseData?.holes?.[idx]) return { grossScore: null };
 
         const holeData = round.courseData.holes[idx];
-        const strokesReceived = calculateStrokesReceived(player.handicap || 0, holeData.strokeIndex);
+        const strokesReceived = calculateStrokesReceived(adjustedHandicap, holeData.strokeIndex);
         const netScore = hole.grossScore - strokesReceived;
 
         return {
@@ -292,7 +307,7 @@ function BestBallScoring() {
       });
 
       scoringData.push({
-        label: `${player.name} (${player.handicap?.toFixed(1)})`,
+        label: `${player.name} (${player.handicap?.toFixed(1)} → ${adjustedHandicap.toFixed(1)})`,
         scores: transformedScores
       });
     });
@@ -340,15 +355,22 @@ function BestBallScoring() {
         {/* Current Hole */}
         <div className="current-hole-section card">
           <HoleInfo
-            hole={currentHoleData}
             holeNumber={currentHole + 1}
+            par={currentHoleData?.par}
+            strokeIndex={currentHoleData?.strokeIndex}
+            yardage={currentHoleData?.yardage}
+            name={currentHoleData?.name}
           />
 
           {/* Player Scores */}
           <div className="players-scoring">
             {teamPlayers.map(player => {
+              // Best Ball handicap allowance: 90% for 2-person, 85% for 4-person
+              const handicapAllowance = teamPlayers.length <= 2 ? 0.90 : 0.85;
+              const adjustedHandicap = (player.handicap || 0) * handicapAllowance;
+
               const playerHole = playerScores[player.id]?.[currentHole];
-              const strokesReceived = calculateStrokesReceived(player.handicap || 0, currentHoleData?.strokeIndex);
+              const strokesReceived = calculateStrokesReceived(adjustedHandicap, currentHoleData?.strokeIndex);
               const netScore = playerHole?.grossScore ? playerHole.grossScore - strokesReceived : null;
               const points = netScore ? calculateStablefordPoints(netScore, currentHoleData?.par) : null;
 
@@ -388,15 +410,9 @@ function BestBallScoring() {
           </div>
         </div>
 
-        {/* Match Progress */}
+        {/* Round Totals */}
         <div className="total-score-section card">
-          <h3>Match Progress</h3>
-
-          {/* Progress Bar */}
-          <div className="progress-bar-container">
-            <div className="progress-bar" style={{ width: `${((currentHole + 1) / 18) * 100}%` }}></div>
-            <span className="progress-text">Hole {currentHole + 1} of 18</span>
-          </div>
+          <h3>Round Totals</h3>
 
           {/* Scores */}
           <div className="total-scores">
@@ -407,8 +423,17 @@ function BestBallScoring() {
                   <span className="value">{calculateTotalScore().totalPoints || 0}</span>
                 </div>
                 <div className="total-item">
-                  <span className="label">Holes Played</span>
-                  <span className="value">{currentHole + 1}</span>
+                  <span className="label">Holes Completed</span>
+                  <span className="value">{(() => {
+                    let count = 0;
+                    for (let i = 0; i < 18; i++) {
+                      const hasAnyScore = teamPlayers.some(player =>
+                        playerScores[player.id]?.[i]?.grossScore !== null
+                      );
+                      if (hasAnyScore) count++;
+                    }
+                    return count;
+                  })()} / 18</span>
                 </div>
               </>
             ) : (
@@ -426,8 +451,17 @@ function BestBallScoring() {
                   <span className="value">
                     {(() => {
                       const totalNet = calculateTotalScore().totalNet || 0;
-                      const coursePar = round?.courseData?.holes?.slice(0, currentHole + 1).reduce((sum, h) => sum + h.par, 0) || 0;
-                      const toPar = totalNet - coursePar;
+                      // Calculate par only for completed holes
+                      let completedHolesPar = 0;
+                      for (let i = 0; i < 18; i++) {
+                        const hasAnyScore = teamPlayers.some(player =>
+                          playerScores[player.id]?.[i]?.grossScore !== null
+                        );
+                        if (hasAnyScore && round?.courseData?.holes?.[i]) {
+                          completedHolesPar += round.courseData.holes[i].par;
+                        }
+                      }
+                      const toPar = totalNet - completedHolesPar;
                       return toPar === 0 ? 'E' : (toPar > 0 ? `+${toPar}` : toPar);
                     })()}
                   </span>
@@ -435,6 +469,86 @@ function BestBallScoring() {
               </>
             )}
           </div>
+
+          {/* Complete Round Button */}
+          {(() => {
+            // Check if all holes have at least one score from any player
+            const allHolesScored = Array.from({ length: 18 }).every((_, i) =>
+              teamPlayers.some(player => playerScores[player.id]?.[i]?.grossScore !== null)
+            );
+
+            // Check if scorecard is already completed
+            const existingScorecard = round?.teamScorecards?.find(sc => sc.teamId === teamId);
+            const isCompleted = existingScorecard?.status === 'completed';
+
+            if (allHolesScored && !isCompleted) {
+              return (
+                <button
+                  className="complete-round-button button primary"
+                  onClick={async () => {
+                    if (window.confirm('Mark this round as complete? You can still edit scores later if needed.')) {
+                      const totalScore = calculateTotalScoreWithScores(playerScores);
+                      const scorecard = {
+                        teamId: teamId,
+                        teamName: team.name,
+                        playerScores: playerScores,
+                        ...totalScore,
+                        status: 'completed',
+                        completedAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                      };
+
+                      const roundIndex = tournament.rounds.findIndex(r => r.id === roundId);
+                      const updatedRounds = [...tournament.rounds];
+
+                      if (!updatedRounds[roundIndex].teamScorecards) {
+                        updatedRounds[roundIndex].teamScorecards = [];
+                      }
+
+                      const existingIndex = updatedRounds[roundIndex].teamScorecards.findIndex(
+                        sc => sc.teamId === teamId
+                      );
+
+                      if (existingIndex >= 0) {
+                        updatedRounds[roundIndex].teamScorecards[existingIndex] = scorecard;
+                      } else {
+                        updatedRounds[roundIndex].teamScorecards.push(scorecard);
+                      }
+
+                      // Check if all team scorecards are completed
+                      const allTeamScorecards = updatedRounds[roundIndex].teamScorecards || [];
+                      const allCompleted = tournament.teams?.every(team => {
+                        const teamScorecard = allTeamScorecards.find(sc => sc.teamId === team.id);
+                        return teamScorecard?.status === 'completed';
+                      });
+
+                      // If all scorecards are completed, mark the round as completed
+                      if (allCompleted) {
+                        updatedRounds[roundIndex].status = 'completed';
+                        updatedRounds[roundIndex].completedAt = new Date().toISOString();
+                      }
+
+                      await updateDoc(doc(db, 'tournaments', tournamentId), {
+                        rounds: updatedRounds
+                      });
+
+                      alert('Round completed successfully!');
+                      navigate(`/tournaments/${tournamentId}`);
+                    }
+                  }}
+                >
+                  ✓ Complete Round
+                </button>
+              );
+            } else if (isCompleted) {
+              return (
+                <div className="completed-badge">
+                  ✓ Round Completed
+                </div>
+              );
+            }
+            return null;
+          })()}
         </div>
 
         {/* Scorecard - Full 18 holes view with traditional golf symbols */}

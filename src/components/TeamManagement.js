@@ -2,9 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   subscribeToTeams,
   subscribeToPlayers,
-  addPlayer,
   updatePlayer,
-  deletePlayer,
   updateTeam
 } from '../firebase/services';
 import './TeamManagement.css';
@@ -14,11 +12,7 @@ function TeamManagement() {
   const [players, setPlayers] = useState([]);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [editingTeam, setEditingTeam] = useState(null);
-  const [newPlayer, setNewPlayer] = useState({
-    name: '',
-    handicap: 0,
-    teamId: ''
-  });
+  const [selectedPlayerId, setSelectedPlayerId] = useState('');
 
   useEffect(() => {
     const unsubscribeTeams = subscribeToTeams(setTeams);
@@ -30,21 +24,16 @@ function TeamManagement() {
     };
   }, []);
 
-  const handleAddPlayer = async (e) => {
-    e.preventDefault();
-    if (newPlayer.name && newPlayer.teamId) {
-      await addPlayer({
-        ...newPlayer,
-        handicap: parseInt(newPlayer.handicap) || 0
-      });
-      setNewPlayer({ name: '', handicap: 0, teamId: '' });
-      setShowAddPlayer(false);
-    }
-  };
+  const [currentTeamId, setCurrentTeamId] = useState('');
 
-  const handleDeletePlayer = async (playerId) => {
-    if (window.confirm('Are you sure you want to delete this player?')) {
-      await deletePlayer(playerId);
+  const handleAddPlayerToTeam = async (e) => {
+    e.preventDefault();
+    if (selectedPlayerId && currentTeamId) {
+      // Update the selected player to assign them to this team
+      await updatePlayer(selectedPlayerId, { teamId: currentTeamId });
+      setSelectedPlayerId('');
+      setCurrentTeamId('');
+      setShowAddPlayer(false);
     }
   };
 
@@ -59,6 +48,17 @@ function TeamManagement() {
 
   const getTeamPlayers = (teamId) => {
     return players.filter(p => p.teamId === teamId).sort((a, b) => a.handicap - b.handicap);
+  };
+
+  const getAvailablePlayers = () => {
+    // Players with no team assignment or not assigned to current team
+    return players.filter(p => !p.teamId || p.teamId === null);
+  };
+
+  const handleRemovePlayerFromTeam = async (playerId) => {
+    if (window.confirm('Remove this player from the team?')) {
+      await updatePlayer(playerId, { teamId: null });
+    }
   };
 
   return (
@@ -122,9 +122,9 @@ function TeamManagement() {
                       </div>
                       <button
                         className="button danger small"
-                        onClick={() => handleDeletePlayer(player.id)}
+                        onClick={() => handleRemovePlayerFromTeam(player.id)}
                       >
-                        Delete
+                        Remove
                       </button>
                     </div>
                   ))
@@ -134,7 +134,7 @@ function TeamManagement() {
               <button
                 className="button small"
                 onClick={() => {
-                  setNewPlayer({ ...newPlayer, teamId: team.id });
+                  setCurrentTeamId(team.id);
                   setShowAddPlayer(true);
                 }}
               >
@@ -148,51 +148,41 @@ function TeamManagement() {
       {showAddPlayer && (
         <div className="modal-overlay" onClick={() => setShowAddPlayer(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Add New Player</h3>
-            <form onSubmit={handleAddPlayer}>
+            <h3>Add Player to Team</h3>
+            <form onSubmit={handleAddPlayerToTeam}>
               <div className="input-group">
-                <label>Player Name</label>
-                <input
-                  type="text"
-                  value={newPlayer.name}
-                  onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })}
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <div className="input-group">
-                <label>Handicap</label>
-                <input
-                  type="number"
-                  value={newPlayer.handicap}
-                  onChange={(e) => setNewPlayer({ ...newPlayer, handicap: e.target.value })}
-                  min="0"
-                  max="54"
-                  required
-                />
-              </div>
-
-              <div className="input-group">
-                <label>Team</label>
-                <select
-                  value={newPlayer.teamId}
-                  onChange={(e) => setNewPlayer({ ...newPlayer, teamId: e.target.value })}
-                  required
-                >
-                  <option value="">Select a team</option>
-                  {teams.map(team => (
-                    <option key={team.id} value={team.id}>{team.name}</option>
-                  ))}
-                </select>
+                <label>Select Player</label>
+                {getAvailablePlayers().length > 0 ? (
+                  <select
+                    value={selectedPlayerId}
+                    onChange={(e) => setSelectedPlayerId(e.target.value)}
+                    required
+                    autoFocus
+                  >
+                    <option value="">Choose a player...</option>
+                    {getAvailablePlayers().map(player => (
+                      <option key={player.id} value={player.id}>
+                        {player.name} (HCP: {player.handicap.toFixed(1)})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="empty-state">
+                    <p>All players are already assigned to teams.</p>
+                    <p className="hint">Go to <a href="/players">Player Management</a> to add new players.</p>
+                  </div>
+                )}
               </div>
 
               <div className="modal-actions">
-                <button type="button" className="button secondary" onClick={() => setShowAddPlayer(false)}>
+                <button type="button" className="button secondary" onClick={() => {
+                  setShowAddPlayer(false);
+                  setSelectedPlayerId('');
+                }}>
                   Cancel
                 </button>
-                <button type="submit" className="button">
-                  Add Player
+                <button type="submit" className="button" disabled={!selectedPlayerId}>
+                  Add to Team
                 </button>
               </div>
             </form>

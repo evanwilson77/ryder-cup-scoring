@@ -1,4 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { auth } from '../firebase/config';
+import { getPlayerByUserId } from '../firebase/services';
+import {
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence
+} from 'firebase/auth';
 
 const AuthContext = createContext();
 
@@ -11,55 +20,73 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentPlayer, setCurrentPlayer] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Check if user is already logged in (from localStorage)
+  // Listen to Firebase Auth state changes
   useEffect(() => {
-    const adminToken = localStorage.getItem('adminToken');
-    const adminExpiry = localStorage.getItem('adminExpiry');
+    // Set persistence to LOCAL (survives browser restarts)
+    setPersistence(auth, browserLocalPersistence).catch((error) => {
+      console.error('Error setting persistence:', error);
+    });
 
-    if (adminToken && adminExpiry) {
-      const expiryTime = parseInt(adminExpiry, 10);
-      if (Date.now() < expiryTime) {
-        setIsAdmin(true);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+
+      if (user) {
+        // Check if admin (email = admin@rydercup.local)
+        if (user.email === 'admin@rydercup.local') {
+          setIsAdmin(true);
+          setCurrentPlayer(null);
+        } else {
+          // Load player profile
+          setIsAdmin(false);
+          const player = await getPlayerByUserId(user.uid);
+          setCurrentPlayer(player);
+        }
       } else {
-        // Token expired, clear storage
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminExpiry');
+        setIsAdmin(false);
+        setCurrentPlayer(null);
       }
-    }
 
-    setLoading(false);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const login = (username, password) => {
-    // Simple authentication - username: admin, password: Greenacres
-    // In production, this would validate against Firebase or a secure backend
-    if (username === 'admin' && password === 'Greenacres') {
-      const token = btoa(`${username}:${Date.now()}`); // Simple token generation
-      const expiry = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
-
-      localStorage.setItem('adminToken', token);
-      localStorage.setItem('adminExpiry', expiry.toString());
-      setIsAdmin(true);
-      return true;
-    }
-    return false;
+  // Admin login
+  const loginAsAdmin = async (password) => {
+    const adminEmail = 'admin@rydercup.local';
+    await signInWithEmailAndPassword(auth, adminEmail, password);
   };
 
-  const logout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminExpiry');
-    setIsAdmin(false);
+  // Player login
+  const loginAsPlayer = async (playerEmail) => {
+    const commonPassword = 'rydercup2025';
+    await signInWithEmailAndPassword(auth, playerEmail, commonPassword);
+  };
+
+  // Sign out
+  const logout = async () => {
+    await firebaseSignOut(auth);
   };
 
   const value = {
+    currentUser,
+    currentPlayer,
     isAdmin,
     loading,
-    login,
+    loginAsAdmin,
+    loginAsPlayer,
     logout
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 };
