@@ -1,0 +1,47 @@
+.floating-media-button {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  z-index: 100;
+}
+
+.floating-media-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+}
+
+.floating-media-button:active {
+  transform: scale(0.95);
+}
+
+.floating-media-button .icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .floating-media-button {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .floating-media-button .icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}

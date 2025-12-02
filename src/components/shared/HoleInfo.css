@@ -1,0 +1,84 @@
+/* Shared HoleInfo Component */
+.hole-info {
+  width: 100%;
+}
+
+.hole-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.hole-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.hole-name {
+  font-size: 0.875rem;
+  color: #718096;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.hole-details {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.hole-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hole-detail-item .label {
+  font-size: 0.75rem;
+  color: #718096;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hole-detail-item .value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a202c;
+  line-height: 1;
+}
+
+.hole-detail-item .value.par {
+  color: #667eea;
+}
+
+/* Compact mode */
+.hole-info.compact .hole-header h3 {
+  font-size: 1.25rem;
+}
+
+.hole-info.compact .hole-details {
+  gap: 1rem;
+}
+
+.hole-info.compact .hole-detail-item .value {
+  font-size: 1.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hole-header h3 {
+    font-size: 1.25rem;
+  }
+
+  .hole-details {
+    gap: 1rem;
+  }
+
+  .hole-detail-item .value {
+    font-size: 1.25rem;
+  }
+}

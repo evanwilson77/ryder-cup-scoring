@@ -1,0 +1,57 @@
+.score-preview {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #f7fafc;
+  border-radius: 0.5rem;
+}
+
+.score-preview .preview-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.score-preview .label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #718096;
+  letter-spacing: 0.05em;
+}
+
+.score-preview .value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.score-preview .value.stableford {
+  color: #667eea;
+}
+
+.score-preview .value.under-par {
+  color: #38a169;
+}
+
+.score-preview .value.over-par {
+  color: #e53e3e;
+}
+
+.score-preview .value.even-par {
+  color: #4a5568;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .score-preview {
+    gap: 1rem;
+  }
+
+  .score-preview .value {
+    font-size: 1.125rem;
+  }
+}

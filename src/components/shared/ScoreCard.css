@@ -1,0 +1,269 @@
+/* Shared ScoreCard Component */
+.scorecard {
+  width: 100%;
+}
+
+.scorecard h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.scorecard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.scorecard-header h4 {
+  margin: 0;
+}
+
+.match-status-badge {
+  padding: 0.5rem 1rem;
+  background: #667eea;
+  color: white;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.scorecard-table-container {
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.scorecard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  background: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+  table-layout: fixed;
+}
+
+.scorecard-table:last-child {
+  margin-bottom: 0;
+}
+
+.scorecard-table th,
+.scorecard-table td {
+  padding: 0.5rem;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  min-width: 2.5rem;
+}
+
+.scorecard-table th {
+  background: #f7fafc;
+  font-weight: 700;
+  color: #4a5568;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.scorecard-table th:first-child,
+.scorecard-table td:first-child {
+  text-align: left;
+  padding-left: 0.75rem;
+  font-weight: 600;
+  width: 140px;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scorecard-table th.current-hole {
+  background: #667eea;
+  color: white;
+}
+
+.scorecard-table th.total,
+.scorecard-table td.total {
+  background: #edf2f7;
+  font-weight: 700;
+  border-left: 2px solid #cbd5e0;
+}
+
+.scorecard-table .par-row {
+  background: #f7fafc;
+  font-weight: 600;
+}
+
+.scorecard-table .score-row td.scored {
+  font-weight: 700;
+  background: white;
+}
+
+.scorecard-table .points-row {
+  background: #e6fffa;
+  font-weight: 600;
+  color: #047857;
+}
+
+.scorecard-table .points-row td.scored {
+  font-weight: 700;
+  color: #065f46;
+}
+
+/* Traditional golf scorecard symbols */
+.score-eagle {
+  background: white !important;
+  position: relative;
+}
+
+.score-eagle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 85%;
+  height: 85%;
+  border: 2px solid #16a34a;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #16a34a;
+}
+
+.score-birdie {
+  background: white !important;
+  position: relative;
+}
+
+.score-birdie::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 85%;
+  height: 85%;
+  border: 2px solid #16a34a;
+  border-radius: 50%;
+}
+
+.score-par {
+  background: white !important;
+}
+
+.score-bogey {
+  background: white !important;
+  position: relative;
+}
+
+.score-bogey::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  height: 80%;
+  border: 2px solid #dc2626;
+  border-radius: 2px;
+}
+
+.score-double {
+  background: white !important;
+  position: relative;
+  font-weight: 700;
+}
+
+.score-double::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 85%;
+  height: 85%;
+  border: 2px solid #dc2626;
+  border-radius: 2px;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #dc2626;
+}
+
+/* Ensure score text appears above symbols */
+.score-eagle,
+.score-birdie,
+.score-bogey,
+.score-double {
+  position: relative;
+}
+
+.score-eagle > *,
+.score-birdie > *,
+.score-bogey > *,
+.score-double > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Match play specific styles */
+.match-table .score-row.side1 {
+  border-left: 4px solid #e53e3e;
+}
+
+.match-table .score-row.side2 {
+  border-left: 4px solid #3182ce;
+}
+
+.match-table .won-hole {
+  background: #d1fae5 !important;
+  font-weight: 700;
+  color: #065f46;
+  position: relative;
+}
+
+.match-table .won-hole::after {
+  content: '✓';
+  position: absolute;
+  top: 0;
+  right: 2px;
+  font-size: 0.625rem;
+  color: #059669;
+}
+
+/* Compact mode */
+.scorecard.compact {
+  font-size: 0.8125rem;
+}
+
+.scorecard.compact .scorecard-table {
+  font-size: 0.75rem;
+}
+
+.scorecard.compact .scorecard-table th,
+.scorecard.compact .scorecard-table td {
+  padding: 0.375rem;
+  min-width: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .scorecard-table {
+    font-size: 0.75rem;
+  }
+
+  .scorecard-table th,
+  .scorecard-table td {
+    padding: 0.375rem;
+    min-width: 2rem;
+  }
+
+  .scorecard-table th:first-child,
+  .scorecard-table td:first-child {
+    padding-left: 0.5rem;
+  }
+
+  .match-status-badge {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+  }
+}

@@ -1,0 +1,46 @@
+.quick-score-section {
+  margin-bottom: 1.5rem;
+}
+
+.quick-score-section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 1rem 0;
+}
+
+.quick-score-buttons {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+}
+
+.quick-score-btn {
+  padding: 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #2d3748;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-score-btn:hover {
+  border-color: #667eea;
+  background: #f7fafc;
+}
+
+.quick-score-btn.selected {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+/* Responsive - stack into 4 columns on smaller screens */
+@media (max-width: 768px) {
+  .quick-score-buttons {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
