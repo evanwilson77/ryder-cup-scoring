@@ -84,7 +84,9 @@ function BestBallScoring() {
       setTeam(foundTeam);
 
       // Determine scoring format
-      const format = foundRound?.scoringFormat || 'stroke';
+      const format = foundRound?.format === 'team_stableford' || foundRound?.scoringFormat === 'stableford'
+        ? 'stableford'
+        : 'stroke';
       setScoringFormat(format);
 
       // Find existing scorecard or create new one
@@ -195,40 +197,36 @@ function BestBallScoring() {
   };
 
   const calculateTotalScoreWithScores = (scores) => {
-    if (scoringFormat === 'stableford') {
-      let totalPoints = 0;
-      for (let i = 0; i < 18; i++) {
-        const best = calculateBestScoreWithScores(i, scores);
+    let totalGross = 0;
+    let totalNet = 0;
+    let totalPoints = 0;
+
+    // Calculate gross total (sum of best gross scores)
+    for (let i = 0; i < 18; i++) {
+      let bestGross = null;
+      teamPlayers.forEach(player => {
+        const playerHole = scores[player.id]?.[i];
+        if (playerHole?.grossScore) {
+          if (bestGross === null || playerHole.grossScore < bestGross) {
+            bestGross = playerHole.grossScore;
+          }
+        }
+      });
+      totalGross += bestGross || 0;
+    }
+
+    // Calculate net and points using best ball logic
+    for (let i = 0; i < 18; i++) {
+      const best = calculateBestScoreWithScores(i, scores);
+      if (scoringFormat === 'stableford') {
         totalPoints += best?.points || 0;
       }
-      return { totalPoints };
-    } else {
-      let totalGross = 0;
-      let totalNet = 0;
-
-      for (let i = 0; i < 18; i++) {
-        const best = calculateBestScoreWithScores(i, scores);
-        if (best?.netScore) {
-          totalNet += best.netScore;
-        }
+      if (best?.netScore) {
+        totalNet += best.netScore;
       }
-
-      // Calculate gross total (sum of best gross scores)
-      for (let i = 0; i < 18; i++) {
-        let bestGross = null;
-        teamPlayers.forEach(player => {
-          const playerHole = scores[player.id]?.[i];
-          if (playerHole?.grossScore) {
-            if (bestGross === null || playerHole.grossScore < bestGross) {
-              bestGross = playerHole.grossScore;
-            }
-          }
-        });
-        totalGross += bestGross || 0;
-      }
-
-      return { totalGross, totalNet };
     }
+
+    return { totalGross, totalNet, totalPoints };
   };
 
   const calculateTotalScore = () => {
