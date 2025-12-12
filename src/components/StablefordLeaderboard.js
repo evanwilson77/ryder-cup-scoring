@@ -16,30 +16,37 @@ function StablefordLeaderboard() {
   useEffect(() => {
     const unsubPlayers = subscribeToPlayers(setPlayers);
     const unsubTournaments = subscribeToTournaments((tournamentsData) => {
-      // Filter for stableford tournaments (check if any round has stableford format)
-      const stablefordTournaments = tournamentsData.filter(t =>
-        t.rounds?.some(r =>
-          r.format === 'individual_stableford' || r.format === 'team_stableford'
-        )
-      );
-      setTournaments(stablefordTournaments);
+      // Show ALL tournaments in dropdown, not just stableford
+      setTournaments(tournamentsData);
 
-      // Auto-select oldest in-progress stableford tournament
-      if (!selectedTournament && stablefordTournaments.length > 0) {
-        const openTournaments = stablefordTournaments.filter(t =>
-          t.status === 'in_progress' || t.status === 'setup'
-        ).sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+      // Auto-select current tournament if already set
+      if (!selectedTournament && tournamentsData.length > 0) {
+        // Try to find a stableford tournament to auto-select
+        const stablefordTournaments = tournamentsData.filter(t =>
+          t.rounds?.some(r =>
+            r.format === 'individual_stableford' || r.format === 'team_stableford'
+          )
+        );
 
-        if (openTournaments.length > 0) {
-          setSelectedTournament(openTournaments[0]);
-        } else {
-          // If no open tournaments, show most recent
-          const sortedByDate = [...stablefordTournaments].sort((a, b) =>
-            new Date(b.startDate) - new Date(a.startDate)
-          );
-          if (sortedByDate.length > 0) {
-            setSelectedTournament(sortedByDate[0]);
+        if (stablefordTournaments.length > 0) {
+          const openTournaments = stablefordTournaments.filter(t =>
+            t.status === 'in_progress' || t.status === 'setup'
+          ).sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+          if (openTournaments.length > 0) {
+            setSelectedTournament(openTournaments[0]);
+          } else {
+            // If no open tournaments, show most recent stableford
+            const sortedByDate = [...stablefordTournaments].sort((a, b) =>
+              new Date(b.startDate) - new Date(a.startDate)
+            );
+            if (sortedByDate.length > 0) {
+              setSelectedTournament(sortedByDate[0]);
+            }
           }
+        } else {
+          // No stableford tournaments at all - navigate back to main leaderboard
+          navigate('/leaderboard');
         }
       }
     });
@@ -48,7 +55,7 @@ function StablefordLeaderboard() {
       unsubPlayers();
       unsubTournaments();
     };
-  }, [selectedTournament]);
+  }, [selectedTournament, navigate]);
 
   useEffect(() => {
     if (selectedTournament && players.length > 0) {
@@ -188,7 +195,18 @@ function StablefordLeaderboard() {
             value={selectedTournament.id}
             onChange={(e) => {
               const tournament = tournaments.find(t => t.id === e.target.value);
-              setSelectedTournament(tournament);
+
+              // Check if selected tournament is a stableford tournament
+              const isStableford = tournament?.rounds?.some(r =>
+                r.format === 'individual_stableford' || r.format === 'team_stableford'
+              );
+
+              if (isStableford) {
+                setSelectedTournament(tournament);
+              } else {
+                // Non-stableford tournament - navigate to regular leaderboard with tournament ID in URL
+                navigate(`/leaderboard?t=${tournament.id}`);
+              }
             }}
             className="tournament-select"
           >
