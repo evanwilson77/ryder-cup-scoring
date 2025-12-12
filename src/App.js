@@ -32,6 +32,7 @@ import PlayerMigration from './components/PlayerMigration';
 import AnomalyLogs from './components/AnomalyLogs';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import PullToRefresh from './components/PullToRefresh';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useMobileOptimizations, usePerformanceMonitor } from './hooks/useMobileOptimizations';
 
 // Protected Route Component
@@ -221,7 +222,7 @@ function AppContent() {
           <Route path="/matches" element={<ProtectedRoute><MatchSetup /></ProtectedRoute>} />
           <Route path="/scoring/:matchId" element={<ProtectedRoute><Scoring /></ProtectedRoute>} />
           <Route path="/match/:matchId" element={<ProtectedRoute><MatchDetail /></ProtectedRoute>} />
-          <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+          <Route path="/leaderboard" element={<ProtectedRoute><ErrorBoundary><Leaderboard /></ErrorBoundary></ProtectedRoute>} />
         </Routes>
       </main>
 

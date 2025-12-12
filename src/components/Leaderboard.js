@@ -33,8 +33,7 @@ function Leaderboard() {
         const requestedTournament = tournamentsData.find(t => t.id === urlTournamentId);
         if (requestedTournament && (!selectedTournament || selectedTournament.id !== urlTournamentId)) {
           setSelectedTournament(requestedTournament);
-          // Clear URL param to avoid interference
-          navigate('/leaderboard', { replace: true });
+          // Keep URL param for bookmarking and browser history
           return;
         }
       }
