@@ -137,20 +137,37 @@ function AppContent() {
   usePerformanceMonitor();
 
   useEffect(() => {
-    // Initialize default data on app load
-    Promise.all([
-      initializeDefaultData(),
-      initializeRegularPlayers(),
-      initializeTournamentSeries()
-    ])
-      .then(() => {
-        setLoading(false);
+    // Initialize default data only after user is authenticated
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
+
+    // Run initializations with individual error handling
+    // These functions check if data already exists, so permission errors are OK
+    const initTasks = [
+      initializeDefaultData().catch(e => {
+        // Silently fail - data might already exist or will be created when needed
+        if (e.code !== 'permission-denied') {
+          console.warn('Could not initialize default data:', e.message);
+        }
+      }),
+      initializeRegularPlayers().catch(e => {
+        if (e.code !== 'permission-denied') {
+          console.warn('Could not initialize players:', e.message);
+        }
+      }),
+      initializeTournamentSeries().catch(e => {
+        if (e.code !== 'permission-denied') {
+          console.warn('Could not initialize tournament series:', e.message);
+        }
       })
-      .catch(error => {
-        console.error('Error initializing data:', error);
-        setLoading(false);
-      });
-  }, []);
+    ];
+
+    Promise.all(initTasks).finally(() => {
+      setLoading(false);
+    });
+  }, [currentUser]);
 
   if (loading) {
     return (

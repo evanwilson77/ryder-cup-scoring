@@ -351,7 +351,8 @@ function Scoring() {
     if (currentHole === 18) {
       await updateMatch(matchId, {
         holeScores: updatedHoleScores,
-        currentHole: 18
+        currentHole: 18,
+        status: 'in_progress'
       });
 
       // Update match data in the tournament's rounds array
@@ -365,16 +366,46 @@ function Scoring() {
             updatedRounds[roundIndex].matches = currentRound.matches.map(m =>
               m.id === matchId ? {
                 ...m,
-                currentHole: 18
+                currentHole: 18,
+                status: 'in_progress'
               } : m
             );
 
-            const tournamentUpdate = { rounds: updatedRounds };
-            if (tournament.status === 'setup') {
-              tournamentUpdate.status = 'in_progress';
+            // CRITICAL: Update round status based on all matches
+            const roundMatches = updatedRounds[roundIndex].matches;
+            const allNotStarted = roundMatches.every(m => m.status === 'not_started' || m.status === 'setup');
+            const allCompleted = roundMatches.every(m => m.status === 'completed');
+
+            if (allCompleted) {
+              updatedRounds[roundIndex].status = 'completed';
+            } else if (allNotStarted) {
+              updatedRounds[roundIndex].status = 'not_started';
+            } else {
+              updatedRounds[roundIndex].status = 'in_progress';
             }
 
-            await updateTournament(tournament.id, tournamentUpdate);
+            // CRITICAL: Update tournament status based on all rounds
+            const allRoundsNotStarted = updatedRounds.filter(r => !r.deleted).every(r =>
+              r.status === 'not_started' || r.status === 'setup'
+            );
+            const allRoundsCompleted = updatedRounds.filter(r => !r.deleted).every(r =>
+              r.status === 'completed'
+            );
+
+            let tournamentStatus;
+            if (allRoundsCompleted) {
+              tournamentStatus = 'completed';
+            } else if (allRoundsNotStarted) {
+              tournamentStatus = 'setup';
+            } else {
+              tournamentStatus = 'in_progress';
+            }
+
+            await updateTournament(tournament.id, {
+              rounds: updatedRounds,
+              status: tournamentStatus,
+              updatedAt: new Date().toISOString()
+            });
           }
         }
       } else if (tournament && tournament.status === 'setup') {
@@ -427,13 +458,41 @@ function Scoring() {
             } : m
           );
 
-          // Automatically start tournament if it's still in setup
-          const tournamentUpdate = { rounds: updatedRounds };
-          if (tournament.status === 'setup') {
-            tournamentUpdate.status = 'in_progress';
+          // CRITICAL: Update round status based on all matches
+          const roundMatches = updatedRounds[roundIndex].matches;
+          const allNotStarted = roundMatches.every(m => m.status === 'not_started' || m.status === 'setup');
+          const allCompleted = roundMatches.every(m => m.status === 'completed');
+
+          if (allCompleted) {
+            updatedRounds[roundIndex].status = 'completed';
+          } else if (allNotStarted) {
+            updatedRounds[roundIndex].status = 'not_started';
+          } else {
+            updatedRounds[roundIndex].status = 'in_progress';
           }
 
-          await updateTournament(tournament.id, tournamentUpdate);
+          // CRITICAL: Update tournament status based on all rounds
+          const allRoundsNotStarted = updatedRounds.filter(r => !r.deleted).every(r =>
+            r.status === 'not_started' || r.status === 'setup'
+          );
+          const allRoundsCompleted = updatedRounds.filter(r => !r.deleted).every(r =>
+            r.status === 'completed'
+          );
+
+          let tournamentStatus;
+          if (allRoundsCompleted) {
+            tournamentStatus = 'completed';
+          } else if (allRoundsNotStarted) {
+            tournamentStatus = 'setup';
+          } else {
+            tournamentStatus = 'in_progress';
+          }
+
+          await updateTournament(tournament.id, {
+            rounds: updatedRounds,
+            status: tournamentStatus,
+            updatedAt: new Date().toISOString()
+          });
         }
       }
     } else if (tournament && tournament.status === 'setup') {
@@ -494,7 +553,28 @@ function Scoring() {
             };
           }
 
-          await updateTournament(tournament.id, { rounds: updatedRounds });
+          // CRITICAL: Update tournament status based on all rounds
+          const allRoundsNotStarted = updatedRounds.filter(r => !r.deleted).every(r =>
+            r.status === 'not_started' || r.status === 'setup'
+          );
+          const allRoundsCompleted = updatedRounds.filter(r => !r.deleted).every(r =>
+            r.status === 'completed'
+          );
+
+          let tournamentStatus;
+          if (allRoundsCompleted) {
+            tournamentStatus = 'completed';
+          } else if (allRoundsNotStarted) {
+            tournamentStatus = 'setup';
+          } else {
+            tournamentStatus = 'in_progress';
+          }
+
+          await updateTournament(tournament.id, {
+            rounds: updatedRounds,
+            status: tournamentStatus,
+            updatedAt: new Date().toISOString()
+          });
         }
       }
     }

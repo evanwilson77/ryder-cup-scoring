@@ -346,7 +346,7 @@ function TournamentDashboard() {
                       <div className="info-row">
                         <span className="info-label">Type:</span>
                         <span className="info-value capitalize">
-                          {tournament.hasTeams ? 'Team Tournament' : 'Individual Tournament'}
+                          {(tournament.hasTeams || (tournament.teams && tournament.teams.length > 0)) ? 'Team Tournament' : 'Individual Tournament'}
                         </span>
                       </div>
 

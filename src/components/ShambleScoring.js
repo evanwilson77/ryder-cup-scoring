@@ -7,9 +7,13 @@ import { subscribeToPlayers } from '../firebase/services';
 import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { calculateStablefordPoints, calculateStrokesReceived } from '../utils/stablefordCalculations';
 import { ScrambleDriveTracker } from '../utils/scrambleCalculations';
+import { useAutoSave, useScoreEntry } from '../hooks';
 import {
-  QuickScoreButtons,
-  HoleNavigationGrid
+  AutoSaveIndicator,
+  HoleInfo,
+  ScoreCard,
+  PlayerScoreEntry,
+  SubmitScorecardButton
 } from './shared';
 import './ShambleScoring.css';
 
@@ -22,12 +26,128 @@ function ShambleScoring() {
   const [players, setPlayers] = useState([]);
   const [teamPlayers, setTeamPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [currentHole, setCurrentHole] = useState(0);
   const [playerScores, setPlayerScores] = useState({}); // playerId -> array of holes
   const [driveSelections, setDriveSelections] = useState([]);
   const [driveTracker, setDriveTracker] = useState(null);
   const [scoringFormat, setScoringFormat] = useState('stroke'); // 'stroke' or 'stableford'
+
+  // Custom hooks
+  const currentHoleData = round?.courseData?.holes?.[currentHole];
+  const { increment, decrement } = useScoreEntry(currentHoleData?.par || 4);
+
+  // Helper to remove undefined values (Firebase doesn't accept them)
+  const cleanUndefined = (obj) => {
+    if (Array.isArray(obj)) {
+      return obj.map(item => cleanUndefined(item));
+    } else if (obj && typeof obj === 'object') {
+      const cleaned = {};
+      Object.keys(obj).forEach(key => {
+        if (obj[key] !== undefined) {
+          cleaned[key] = cleanUndefined(obj[key]);
+        }
+      });
+      return cleaned;
+    }
+    return obj;
+  };
+
+  const autoSaveScore = async (updatedPlayerScores, updatedDriveSelections = driveSelections) => {
+    if (!team || !round || !tournament) return;
+
+    try {
+      const totalScore = calculateTotalScoreWithScores(updatedPlayerScores);
+
+      // Determine current status based on scores
+      // Check across all players to see if any holes have scores
+      let holesWithScores = 0;
+      const totalHoles = 18;
+
+      for (let holeNum = 1; holeNum <= totalHoles; holeNum++) {
+        // Check if at least one player has a score for this hole
+        const hasScore = Object.values(updatedPlayerScores).some(playerHoles => {
+          const hole = playerHoles.find(h => h.holeNumber === holeNum);
+          return hole && hole.grossScore !== null && hole.grossScore !== undefined;
+        });
+        if (hasScore) holesWithScores++;
+      }
+
+      const allHolesComplete = holesWithScores === totalHoles;
+      const status = holesWithScores === 0 ? 'not_started' : (allHolesComplete ? 'completed' : 'in_progress');
+
+      const scorecard = {
+        teamId: teamId,
+        teamName: team.name,
+        playerScores: updatedPlayerScores,
+        driveSelections: updatedDriveSelections,
+        scoringFormat: scoringFormat,
+        ...totalScore,
+        status: status,
+        currentHole: currentHole,
+        updatedAt: new Date().toISOString()
+      };
+
+      const roundIndex = tournament.rounds.findIndex(r => r.id === roundId);
+      const updatedRounds = [...tournament.rounds];
+
+      if (!updatedRounds[roundIndex].teamScorecards) {
+        updatedRounds[roundIndex].teamScorecards = [];
+      }
+
+      const existingIndex = updatedRounds[roundIndex].teamScorecards.findIndex(
+        sc => sc.teamId === teamId
+      );
+
+      if (existingIndex >= 0) {
+        updatedRounds[roundIndex].teamScorecards[existingIndex] = scorecard;
+      } else {
+        updatedRounds[roundIndex].teamScorecards.push(scorecard);
+      }
+
+      // CRITICAL: Update round status based on all scorecards
+      const roundScorecards = updatedRounds[roundIndex].teamScorecards;
+      const allNotStarted = roundScorecards.every(sc => sc.status === 'not_started');
+      const allCompleted = roundScorecards.every(sc => sc.status === 'completed');
+
+      if (allCompleted) {
+        updatedRounds[roundIndex].status = 'completed';
+      } else if (allNotStarted) {
+        updatedRounds[roundIndex].status = 'not_started';
+      } else {
+        updatedRounds[roundIndex].status = 'in_progress';
+      }
+
+      // CRITICAL: Update tournament status based on all rounds
+      const allRoundsNotStarted = updatedRounds.filter(r => !r.deleted).every(r =>
+        r.status === 'not_started' || r.status === 'setup'
+      );
+      const allRoundsCompleted = updatedRounds.filter(r => !r.deleted).every(r =>
+        r.status === 'completed'
+      );
+
+      let tournamentStatus;
+      if (allRoundsCompleted) {
+        tournamentStatus = 'completed';
+      } else if (allRoundsNotStarted) {
+        tournamentStatus = 'setup';
+      } else {
+        tournamentStatus = 'in_progress';
+      }
+
+      // Clean undefined values before saving to Firebase
+      const cleanedUpdate = cleanUndefined({
+        rounds: updatedRounds,
+        status: tournamentStatus,
+        updatedAt: new Date().toISOString()
+      });
+
+      await updateDoc(doc(db, 'tournaments', tournamentId), cleanedUpdate);
+    } catch (error) {
+      console.error('Error auto-saving:', error);
+    }
+  };
+
+  const { isSaving, save: triggerAutoSave } = useAutoSave(autoSaveScore, 1000);
 
   useEffect(() => {
     const unsubTournament = subscribeToTournament(tournamentId, (tournamentData) => {
@@ -105,16 +225,29 @@ function ShambleScoring() {
   }, [team, players, round, driveSelections]);
 
   const handleScoreChange = (playerId, holeIndex, grossScore) => {
-    setPlayerScores(prev => ({
-      ...prev,
-      [playerId]: prev[playerId].map((hole, idx) =>
+    const updatedScores = {
+      ...playerScores,
+      [playerId]: playerScores[playerId].map((hole, idx) =>
         idx === holeIndex ? { ...hole, grossScore } : hole
       )
-    }));
+    };
+    setPlayerScores(updatedScores);
+
+    if (grossScore !== null && grossScore !== '') {
+      triggerAutoSave(updatedScores, driveSelections);
+    }
   };
 
-  const handleQuickScore = (playerId, holeIndex, grossScore) => {
-    handleScoreChange(playerId, holeIndex, grossScore);
+  const incrementScore = (playerId, holeIndex) => {
+    const currentScore = playerScores[playerId]?.[holeIndex]?.grossScore;
+    const newScore = increment(currentScore);
+    handleScoreChange(playerId, holeIndex, newScore);
+  };
+
+  const decrementScore = (playerId, holeIndex) => {
+    const currentScore = playerScores[playerId]?.[holeIndex]?.grossScore;
+    const newScore = decrement(currentScore);
+    handleScoreChange(playerId, holeIndex, newScore);
   };
 
   const handleDriveSelection = (holeIndex, playerId) => {
@@ -139,9 +272,12 @@ function ShambleScoring() {
 
       setDriveTracker(newTracker);
     }
+
+    // Auto-save drive selection
+    triggerAutoSave(playerScores, newSelections);
   };
 
-  const calculateBestScore = (holeIndex) => {
+  const calculateBestScoreWithScores = (holeIndex, scores) => {
     const holeData = round?.courseData?.holes?.[holeIndex];
     if (!holeData) return null;
 
@@ -150,7 +286,7 @@ function ShambleScoring() {
     let bestPlayer = null;
 
     teamPlayers.forEach(player => {
-      const playerHole = playerScores[player.id]?.[holeIndex];
+      const playerHole = scores[player.id]?.[holeIndex];
       if (!playerHole?.grossScore) return;
 
       const strokesReceived = calculateStrokesReceived(player.handicap || 0, holeData.strokeIndex);
@@ -175,11 +311,15 @@ function ShambleScoring() {
       : { netScore: bestNetScore, player: bestPlayer };
   };
 
-  const calculateTotalScore = () => {
+  const calculateBestScore = (holeIndex) => {
+    return calculateBestScoreWithScores(holeIndex, playerScores);
+  };
+
+  const calculateTotalScoreWithScores = (scores) => {
     if (scoringFormat === 'stableford') {
       let totalPoints = 0;
       for (let i = 0; i < 18; i++) {
-        const best = calculateBestScore(i);
+        const best = calculateBestScoreWithScores(i, scores);
         totalPoints += best?.points || 0;
       }
       return { totalPoints };
@@ -188,7 +328,7 @@ function ShambleScoring() {
       let totalNet = 0;
 
       for (let i = 0; i < 18; i++) {
-        const best = calculateBestScore(i);
+        const best = calculateBestScoreWithScores(i, scores);
         if (best?.netScore) {
           totalNet += best.netScore;
         }
@@ -198,7 +338,7 @@ function ShambleScoring() {
       for (let i = 0; i < 18; i++) {
         let bestGross = null;
         teamPlayers.forEach(player => {
-          const playerHole = playerScores[player.id]?.[i];
+          const playerHole = scores[player.id]?.[i];
           if (playerHole?.grossScore) {
             if (bestGross === null || playerHole.grossScore < bestGross) {
               bestGross = playerHole.grossScore;
@@ -212,26 +352,27 @@ function ShambleScoring() {
     }
   };
 
-  const handleSaveScore = async () => {
-    setSaving(true);
+  const calculateTotalScore = () => {
+    return calculateTotalScoreWithScores(playerScores);
+  };
 
-    try {
-      // Validate drive requirements if enforced
-      const config = round?.shambleConfig || {};
-      if (config.enforceDriveRequirements && driveTracker) {
-        const validation = driveTracker.validate();
-        if (!validation.isValid) {
-          const message = validation.violations.map(v =>
-            `${v.playerName}: ${v.used}/${v.required} drives (${v.missing} missing)`
-          ).join('\n');
+  const handleSubmit = async () => {
+    // Validate drive requirements if enforced
+    const config = round?.shambleConfig || {};
+    if (config.enforceDriveRequirements && driveTracker) {
+      const validation = driveTracker.validate();
+      if (!validation.isValid) {
+        const message = validation.violations.map(v =>
+          `${v.playerName}: ${v.used}/${v.required} drives (${v.missing} missing)`
+        ).join('\n');
 
-          if (!window.confirm(`Drive requirements not met:\n\n${message}\n\nSave anyway?`)) {
-            setSaving(false);
-            return;
-          }
+        if (!window.confirm(`Drive requirements not met:\n\n${message}\n\nSubmit anyway?`)) {
+          return false;
         }
       }
+    }
 
+    try {
       const roundIndex = tournament.rounds.findIndex(r => r.id === roundId);
       const updatedRounds = [...tournament.rounds];
 
@@ -262,17 +403,52 @@ function ShambleScoring() {
         updatedRounds[roundIndex].teamScorecards.push(scorecard);
       }
 
-      await updateDoc(doc(db, 'tournaments', tournamentId), {
-        rounds: updatedRounds
+      // CRITICAL: Update round status based on all scorecards
+      const roundScorecards = updatedRounds[roundIndex].teamScorecards;
+      const allNotStarted = roundScorecards.every(sc => sc.status === 'not_started');
+      const allCompleted = roundScorecards.every(sc => sc.status === 'completed');
+
+      if (allCompleted) {
+        updatedRounds[roundIndex].status = 'completed';
+        updatedRounds[roundIndex].completedAt = new Date().toISOString();
+      } else if (allNotStarted) {
+        updatedRounds[roundIndex].status = 'not_started';
+      } else {
+        updatedRounds[roundIndex].status = 'in_progress';
+      }
+
+      // CRITICAL: Update tournament status based on all rounds
+      const allRoundsNotStarted = updatedRounds.filter(r => !r.deleted).every(r =>
+        r.status === 'not_started' || r.status === 'setup'
+      );
+      const allRoundsCompleted = updatedRounds.filter(r => !r.deleted).every(r =>
+        r.status === 'completed'
+      );
+
+      let tournamentStatus;
+      if (allRoundsCompleted) {
+        tournamentStatus = 'completed';
+      } else if (allRoundsNotStarted) {
+        tournamentStatus = 'setup';
+      } else {
+        tournamentStatus = 'in_progress';
+      }
+
+      // Clean undefined values before saving to Firebase
+      const cleanedUpdate = cleanUndefined({
+        rounds: updatedRounds,
+        status: tournamentStatus,
+        updatedAt: new Date().toISOString()
       });
 
-      alert('Score saved successfully!');
+      await updateDoc(doc(db, 'tournaments', tournamentId), cleanedUpdate);
+
       navigate(`/tournaments/${tournamentId}`);
+      return true;
     } catch (error) {
       console.error('Error saving score:', error);
       alert('Failed to save score. Please try again.');
-    } finally {
-      setSaving(false);
+      return false;
     }
   };
 
@@ -286,10 +462,10 @@ function ShambleScoring() {
     );
   }
 
-  const currentHoleData = round.courseData?.holes?.[currentHole];
   const currentDriveSelection = driveSelections[currentHole];
   const config = round?.shambleConfig || {};
   const bestScore = calculateBestScore(currentHole);
+  const totalScore = calculateTotalScore();
 
   return (
     <div className="shamble-scoring">
@@ -306,31 +482,25 @@ function ShambleScoring() {
 
           <div className="header-info">
             <h1>{team.name} - Shamble</h1>
-            <p className="tournament-info">{tournament.name} - Round {tournament.rounds.findIndex(r => r.id === roundId) + 1}</p>
+            <p className="tournament-info">{tournament.name} - {round.name}</p>
             <div className="format-info">
-              Format: {scoringFormat === 'stableford' ? 'Shamble Stableford' : 'Shamble Stroke Play'}
-              <p className="format-description">Best drive, then individual play</p>
+              {scoringFormat === 'stableford' ? 'Shamble Stableford' : 'Shamble Stroke Play'}
+              <span className="format-description"> • Best drive, then individual play</span>
             </div>
           </div>
 
-          <button
-            onClick={handleSaveScore}
-            className="button primary"
-            disabled={saving}
-          >
-            {saving ? 'Saving...' : 'Save Score'}
-          </button>
+          <AutoSaveIndicator isSaving={isSaving} />
         </div>
 
         {/* Current Hole */}
-        <div className="current-hole-section">
-          <div className="hole-header">
-            <h2>Hole {currentHole + 1}</h2>
-            <div className="hole-details">
-              <span className="hole-par">Par {currentHoleData?.par}</span>
-              <span className="hole-si">SI {currentHoleData?.strokeIndex}</span>
-            </div>
-          </div>
+        <div className="current-hole-section card">
+          <HoleInfo
+            holeNumber={currentHole + 1}
+            par={currentHoleData?.par}
+            strokeIndex={currentHoleData?.strokeIndex}
+            yardage={currentHoleData?.yardage}
+            name={currentHoleData?.name}
+          />
 
           {/* Drive Selection */}
           <div className="drive-selection-section">
@@ -370,7 +540,7 @@ function ShambleScoring() {
             </div>
           </div>
 
-          {/* Individual Scores */}
+          {/* Individual Player Scores */}
           <div className="players-scoring">
             <h3>Individual Scores</h3>
             {teamPlayers.map(player => {
@@ -381,28 +551,17 @@ function ShambleScoring() {
 
               return (
                 <div key={player.id} className="player-score-section">
-                  <div className="player-header">
-                    <span className="player-name">{player.name}</span>
-                    <span className="player-handicap">HCP {player.handicap?.toFixed(1)}</span>
-                    {strokesReceived > 0 && (
-                      <span className="strokes-badge">{strokesReceived} stroke{strokesReceived > 1 ? 's' : ''}</span>
-                    )}
-                  </div>
-
-                  <QuickScoreButtons
-                    onSelect={(score) => handleQuickScore(player.id, currentHole, score)}
-                    selectedScore={playerHole?.grossScore}
-                    min={1}
-                    max={10}
+                  <PlayerScoreEntry
+                    player={player}
+                    grossScore={playerHole?.grossScore}
+                    netScore={netScore}
+                    points={scoringFormat === 'stableford' ? points : undefined}
+                    strokesReceived={strokesReceived}
+                    onIncrement={() => incrementScore(player.id, currentHole)}
+                    onDecrement={() => decrementScore(player.id, currentHole)}
+                    onChange={(value) => handleScoreChange(player.id, currentHole, value)}
+                    showPoints={scoringFormat === 'stableford'}
                   />
-
-                  {playerHole?.grossScore && (
-                    <div className="player-score-summary">
-                      <span>Gross: {playerHole.grossScore}</span>
-                      <span>Net: {netScore}</span>
-                      {scoringFormat === 'stableford' && <span>Points: {points}</span>}
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -427,45 +586,175 @@ function ShambleScoring() {
               </div>
             </div>
           )}
+
+          {/* Hole Navigation Buttons */}
+          <div className="hole-navigation-buttons">
+            <button
+              onClick={() => setCurrentHole(Math.max(0, currentHole - 1))}
+              disabled={currentHole === 0}
+              className="nav-btn secondary"
+            >
+              ← Previous Hole
+            </button>
+            <button
+              onClick={() => setCurrentHole(Math.min(17, currentHole + 1))}
+              disabled={currentHole === 17}
+              className="nav-btn secondary"
+            >
+              Next Hole →
+            </button>
+          </div>
         </div>
 
-        {/* Hole Navigation */}
-        <HoleNavigationGrid
-          currentHole={currentHole}
-          onHoleSelect={setCurrentHole}
-          completedHoles={Array.from({ length: 18 }, (_, i) => {
-            const allScored = teamPlayers.every(player =>
-              playerScores[player.id]?.[i]?.grossScore !== null
-            );
-            const driveSelected = driveSelections[i] !== null;
-            return allScored && driveSelected;
-          })}
-          title="Holes"
-        />
-
-        {/* Total Score */}
-        <div className="total-score-section">
-          <h3>Team Total</h3>
+        {/* Round Totals */}
+        <div className="total-score-section card">
+          <h3>Round Totals</h3>
           <div className="total-scores">
             {scoringFormat === 'stableford' ? (
-              <div className="total-item">
-                <span className="label">Total Points:</span>
-                <span className="value">{calculateTotalScore().totalPoints || 0}</span>
-              </div>
+              <>
+                <div className="total-item">
+                  <span className="label">Total Points</span>
+                  <span className="value">{totalScore.totalPoints || 0}</span>
+                </div>
+                <div className="total-item">
+                  <span className="label">Holes Completed</span>
+                  <span className="value">
+                    {(() => {
+                      let count = 0;
+                      for (let i = 0; i < 18; i++) {
+                        const hasAnyScore = teamPlayers.some(player =>
+                          playerScores[player.id]?.[i]?.grossScore !== null
+                        );
+                        if (hasAnyScore) count++;
+                      }
+                      return count;
+                    })()} / 18
+                  </span>
+                </div>
+              </>
             ) : (
               <>
                 <div className="total-item">
-                  <span className="label">Gross:</span>
-                  <span className="value">{calculateTotalScore().totalGross || 0}</span>
+                  <span className="label">Gross</span>
+                  <span className="value">{totalScore.totalGross || 0}</span>
                 </div>
                 <div className="total-item">
-                  <span className="label">Net:</span>
-                  <span className="value">{calculateTotalScore().totalNet || 0}</span>
+                  <span className="label">Net</span>
+                  <span className="value">{totalScore.totalNet || 0}</span>
+                </div>
+                <div className="total-item">
+                  <span className="label">To Par</span>
+                  <span className="value">
+                    {(() => {
+                      const totalNet = totalScore.totalNet || 0;
+                      let completedHolesPar = 0;
+                      for (let i = 0; i < 18; i++) {
+                        const hasAnyScore = teamPlayers.some(player =>
+                          playerScores[player.id]?.[i]?.grossScore !== null
+                        );
+                        if (hasAnyScore && round?.courseData?.holes?.[i]) {
+                          completedHolesPar += round.courseData.holes[i].par;
+                        }
+                      }
+                      const toPar = totalNet - completedHolesPar;
+                      return toPar === 0 ? 'E' : (toPar > 0 ? `+${toPar}` : toPar);
+                    })()}
+                  </span>
+                </div>
+                <div className="total-item">
+                  <span className="label">Holes Completed</span>
+                  <span className="value">
+                    {(() => {
+                      let count = 0;
+                      for (let i = 0; i < 18; i++) {
+                        const hasAnyScore = teamPlayers.some(player =>
+                          playerScores[player.id]?.[i]?.grossScore !== null
+                        );
+                        if (hasAnyScore) count++;
+                      }
+                      return count;
+                    })()} / 18
+                  </span>
                 </div>
               </>
             )}
           </div>
         </div>
+
+        {/* Scorecard */}
+        <div className="card">
+          <ScoreCard
+            holes={round.courseData?.holes || []}
+            format={scoringFormat === 'stableford' ? 'stableford' : 'individual_stroke'}
+            scoringData={teamPlayers.map(player => {
+              const playerHoles = playerScores[player.id] || [];
+              return {
+                label: `${player.name} (${(player.handicap || 0).toFixed(1)})`,
+                scores: playerHoles.map((hole, idx) => {
+                  if (!hole?.grossScore || !round?.courseData?.holes?.[idx]) {
+                    return { grossScore: null, netScore: null, stablefordPoints: null };
+                  }
+                  const holeData = round.courseData.holes[idx];
+                  const strokesReceived = calculateStrokesReceived(player.handicap || 0, holeData.strokeIndex);
+                  const netScore = hole.grossScore - strokesReceived;
+                  return {
+                    grossScore: hole.grossScore,
+                    netScore: netScore,
+                    stablefordPoints: scoringFormat === 'stableford'
+                      ? calculateStablefordPoints(netScore, holeData.par)
+                      : null
+                  };
+                })
+              };
+            })}
+            currentHole={currentHole + 1}
+          />
+        </div>
+
+        {/* Drive Totals */}
+        {config.enforceDriveRequirements && driveTracker && (
+          <div className="card drive-totals-section">
+            <h3>Drive Usage Summary</h3>
+            <div className="drive-totals-grid">
+              {teamPlayers.map(player => {
+                const status = driveTracker.getPlayerStatus(player.id, 18);
+                const isCompliant = status.used >= config.minDrivesPerPlayer;
+                return (
+                  <div key={player.id} className={`drive-total-item ${isCompliant ? 'compliant' : 'needs-more'}`}>
+                    <div className="drive-total-player">
+                      <span className="player-name">{player.name}</span>
+                      {!isCompliant && <span className="warning-icon">⚠️</span>}
+                    </div>
+                    <div className="drive-total-count">
+                      <span className="drives-used">{status.used}</span>
+                      <span className="drives-separator">/</span>
+                      <span className="drives-required">{config.minDrivesPerPlayer}</span>
+                      <span className="drives-label">drives</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {(() => {
+              const validation = driveTracker.validate();
+              if (!validation.isValid) {
+                return (
+                  <div className="drive-warning">
+                    <span className="warning-icon">⚠️</span>
+                    <span>Some players have not met the minimum drive requirement</span>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <SubmitScorecardButton
+          onSubmit={handleSubmit}
+          buttonText="Submit Shamble Score"
+        />
       </div>
     </div>
   );

@@ -52,10 +52,21 @@ function TournamentDetail() {
     notes: '',
     players: []
   });
+  const [editTab, setEditTab] = useState('details'); // 'details' | 'rounds'
+  const [expandedRounds, setExpandedRounds] = useState(new Set());
+  const [editingRoundId, setEditingRoundId] = useState(null); // ID of round being edited
+  const [editingRoundData, setEditingRoundData] = useState(null); // Edited round data
+  const [roundOperationLoading, setRoundOperationLoading] = useState(false); // Loading state for round operations
+  const [notification, setNotification] = useState(null); // { message, type: 'success'|'error' }
   const [holeConfigExpanded, setHoleConfigExpanded] = useState(false);
 
   useEffect(() => {
     const unsubTournament = subscribeToTournament(tournamentId, async (tournamentData) => {
+      console.log('Tournament loaded:', {
+        hasTeams: tournamentData.hasTeams,
+        teams: tournamentData.teams?.length || 0,
+        teamNames: tournamentData.teams?.map(t => t.name) || []
+      });
       setTournament(tournamentData);
 
       // Load series info if tournament has a series
@@ -494,6 +505,8 @@ function TournamentDetail() {
       notes: tournament.notes || '',
       players: tournament.players || []
     });
+    setEditTab('details'); // Reset to details tab
+    setExpandedRounds(new Set()); // Clear expanded rounds
     setShowEditModal(true);
   };
 
@@ -536,6 +549,254 @@ function TournamentDetail() {
         console.error('Error deleting tournament:', error);
         alert('Failed to delete tournament. Please try again.');
       }
+    }
+  };
+
+  // Notification helper
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000); // Auto-dismiss after 3 seconds
+  };
+
+  // Round management functions
+  const handleAddRound = async () => {
+    if (roundOperationLoading) return;
+
+    try {
+      setRoundOperationLoading(true);
+      const activeRounds = (tournament.rounds || []).filter(r => !r.deleted);
+      const newRound = {
+        id: `round-${Date.now()}`,
+        roundNumber: activeRounds.length + 1,
+        name: `Round ${activeRounds.length + 1}`,
+        date: tournament.endDate, // Default to last day
+        format: null,
+        status: 'not_started',
+        courseData: { holes: [], totalPar: 0 },
+        matches: [],
+        scorecards: [],
+        teamScorecards: [],
+        deleted: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      const updatedRounds = [...(tournament.rounds || []), newRound];
+      await updateTournament(tournamentId, { rounds: updatedRounds });
+      showNotification(`${newRound.name} added successfully`, 'success');
+
+      // Auto-expand the new round
+      setExpandedRounds(prev => {
+        const newSet = new Set(prev);
+        newSet.add(newRound.id);
+        return newSet;
+      });
+    } catch (error) {
+      console.error('Error adding round:', error);
+      showNotification('Failed to add round. Please try again.', 'error');
+    } finally {
+      setRoundOperationLoading(false);
+    }
+  };
+
+  const canDeleteRound = (round) => {
+    // Check for scored data
+    const hasScores =
+      (round.scorecards?.some(sc => sc.status !== 'not_started')) ||
+      (round.teamScorecards?.some(sc => sc.status !== 'not_started')) ||
+      (round.matches?.some(m => m.status !== 'setup'));
+    return !hasScores;
+  };
+
+  const handleDeleteRound = async (roundId) => {
+    if (roundOperationLoading) return;
+
+    try {
+      const round = tournament.rounds.find(r => r.id === roundId);
+
+      if (!canDeleteRound(round)) {
+        showNotification('Cannot delete round with scored data. Please clear scores first.', 'error');
+        return;
+      }
+
+      if (!window.confirm(`Delete ${round.name}? This will hide it from view.`)) {
+        return;
+      }
+
+      setRoundOperationLoading(true);
+
+      // Soft delete: mark as deleted
+      const updatedRounds = tournament.rounds.map(r =>
+        r.id === roundId ? { ...r, deleted: true, updatedAt: new Date().toISOString() } : r
+      );
+
+      // Renumber remaining active rounds
+      const activeRounds = updatedRounds.filter(r => !r.deleted);
+      activeRounds.forEach((r, idx) => {
+        r.roundNumber = idx + 1;
+        r.name = r.name.replace(/Round \d+/, `Round ${idx + 1}`);
+      });
+
+      await updateTournament(tournamentId, { rounds: updatedRounds });
+      showNotification(`${round.name} deleted successfully`, 'success');
+
+      // Collapse the deleted round
+      setExpandedRounds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(roundId);
+        return newSet;
+      });
+    } catch (error) {
+      console.error('Error deleting round:', error);
+      showNotification('Failed to delete round. Please try again.', 'error');
+    } finally {
+      setRoundOperationLoading(false);
+    }
+  };
+
+  const toggleRoundExpansion = (roundId) => {
+    setExpandedRounds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(roundId)) {
+        newSet.delete(roundId);
+      } else {
+        newSet.add(roundId);
+      }
+      return newSet;
+    });
+  };
+
+  // Round editing functions
+  const handleStartEditRound = (round) => {
+    setEditingRoundId(round.id);
+    setEditingRoundData({
+      name: round.name,
+      date: round.date,
+      format: round.format
+    });
+  };
+
+  const handleCancelEditRound = () => {
+    setEditingRoundId(null);
+    setEditingRoundData(null);
+  };
+
+  const handleConfigureRoundCourse = (round) => {
+    if (!round.format) {
+      alert('Please select a round format before configuring the course');
+      return;
+    }
+    setConfiguringRound(round);
+    setShowCourseConfig(true);
+  };
+
+  const handleSetupRoundScoring = (round) => {
+    if (!round.format) {
+      alert('Please select a round format before setting up scoring');
+      return;
+    }
+
+    if (!round.courseData?.holes?.length) {
+      alert('Please configure the course before setting up scoring');
+      return;
+    }
+
+    setConfiguringRound(round);
+
+    // Show appropriate setup modal based on format
+    if (['match_play_singles', 'four_ball', 'foursomes'].includes(round.format)) {
+      setShowMatchSetup(true);
+    } else if (['scramble', 'shamble', 'best_ball', 'team_stableford'].includes(round.format)) {
+      // Check if teams are configured for team formats
+      if (!tournament.teams || tournament.teams.length === 0) {
+        const shouldSetupTeams = window.confirm(
+          'No teams are configured for this tournament. Would you like to set up teams now?\n\n' +
+          'Team-based formats require teams to be configured.'
+        );
+        if (shouldSetupTeams) {
+          if (!tournament.hasTeams) {
+            updateTournament(tournamentId, { hasTeams: true }).catch(err => {
+              console.error('Error enabling teams:', err);
+            });
+          }
+          setShowTeamEditor(true);
+        }
+        return;
+      }
+      setShowTeamScorecardSetup(true);
+    } else {
+      setShowScorecardSetup(true);
+    }
+  };
+
+  const handleUpdateRound = async (roundId) => {
+    if (roundOperationLoading) return;
+
+    try {
+      const roundIndex = tournament.rounds.findIndex(r => r.id === roundId);
+      const existingRound = tournament.rounds[roundIndex];
+
+      // Validation
+      if (!editingRoundData.name || !editingRoundData.name.trim()) {
+        showNotification('Round name cannot be empty', 'error');
+        return;
+      }
+
+      if (!editingRoundData.date) {
+        showNotification('Round date is required', 'error');
+        return;
+      }
+
+      // Check if format is changing and round has data
+      if (editingRoundData.format && editingRoundData.format !== existingRound.format) {
+        const hasData =
+          (existingRound.scorecards?.length > 0) ||
+          (existingRound.teamScorecards?.length > 0) ||
+          (existingRound.matches?.length > 0);
+
+        if (hasData) {
+          const confirmed = window.confirm(
+            'Changing format will clear all scoring configurations (matches/scorecards). Continue?'
+          );
+          if (!confirmed) return;
+        }
+      }
+
+      setRoundOperationLoading(true);
+
+      // Build updates object
+      const updates = {
+        name: editingRoundData.name.trim(),
+        date: editingRoundData.date,
+        format: editingRoundData.format,
+        updatedAt: new Date().toISOString()
+      };
+
+      // Clear format-specific data if format changed
+      if (editingRoundData.format !== existingRound.format) {
+        updates.scorecards = [];
+        updates.teamScorecards = [];
+        updates.matches = [];
+      }
+
+      // Update the round
+      const updatedRounds = [...tournament.rounds];
+      updatedRounds[roundIndex] = {
+        ...existingRound,
+        ...updates
+      };
+
+      await updateTournament(tournamentId, { rounds: updatedRounds });
+      showNotification(`${updates.name} updated successfully`, 'success');
+
+      // Clear editing state
+      setEditingRoundId(null);
+      setEditingRoundData(null);
+    } catch (error) {
+      console.error('Error updating round:', error);
+      showNotification('Failed to update round. Please try again.', 'error');
+    } finally {
+      setRoundOperationLoading(false);
     }
   };
 
@@ -588,7 +849,7 @@ function TournamentDetail() {
               </div>
               <div className="header-stat">
                 <TrophyIcon className="stat-icon" />
-                <span>{tournament.hasTeams ? 'Team Tournament' : 'Individual Tournament'}</span>
+                <span>{(tournament.hasTeams || (tournament.teams && tournament.teams.length > 0)) ? 'Team Tournament' : 'Individual Tournament'}</span>
               </div>
               <div className="header-stat">
                 <UserGroupIcon className="stat-icon" />
@@ -691,10 +952,14 @@ function TournamentDetail() {
                   .map((scorecardData, index) => {
                     const { round, scorecard, type, team } = scorecardData;
                     const isCompleted = scorecard.status === 'completed';
+                    // Create unique key combining round id and team/player info
+                    const uniqueKey = type === 'team'
+                      ? `${round.id}-${team?.id}-team`
+                      : `${round.id}-individual`;
 
                     return (
                       <div
-                        key={index}
+                        key={uniqueKey}
                         className={`scorecard-item ${isCompleted ? 'completed' : ''}`}
                         onClick={() => navigateToScorecard(scorecardData)}
                       >
@@ -809,11 +1074,11 @@ function TournamentDetail() {
           <h2>Rounds</h2>
           <p className="section-subtitle">Configure and manage tournament rounds</p>
 
-          {tournament.rounds && tournament.rounds.length > 0 ? (
+          {tournament.rounds && tournament.rounds.filter(r => !r.deleted).length > 0 ? (
             <div className="rounds-layout">
               {/* Round List */}
               <div className="rounds-list">
-                {tournament.rounds.map((round, index) => (
+                {tournament.rounds.filter(r => !r.deleted).map((round, index) => (
                   <div
                     key={round.id}
                     className={`round-item ${selectedRound?.id === round.id ? 'selected' : ''}`}
@@ -1311,22 +1576,41 @@ function TournamentDetail() {
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Edit Tournament Details</h2>
+              <h2>Edit Tournament</h2>
               <button onClick={() => setShowEditModal(false)} className="close-button">×</button>
             </div>
 
+            {/* Tab Switcher */}
+            <div className="modal-tabs">
+              <button
+                className={`tab-button ${editTab === 'details' ? 'active' : ''}`}
+                onClick={() => setEditTab('details')}
+              >
+                Details
+              </button>
+              <button
+                className={`tab-button ${editTab === 'rounds' ? 'active' : ''}`}
+                onClick={() => setEditTab('rounds')}
+              >
+                Rounds
+              </button>
+            </div>
+
             <div className="modal-body">
-              <div className="form-group">
-                <label htmlFor="tournament-name">Tournament Name</label>
-                <input
-                  id="tournament-name"
-                  type="text"
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                  className="input"
-                  placeholder="Tournament Name"
-                />
-              </div>
+              {/* Details Tab */}
+              {editTab === 'details' && (
+                <>
+                  <div className="form-group">
+                    <label htmlFor="tournament-name">Tournament Name</label>
+                    <input
+                      id="tournament-name"
+                      type="text"
+                      value={editFormData.name}
+                      onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                      className="input"
+                      placeholder="Tournament Name"
+                    />
+                  </div>
 
               <div className="form-row">
                 <div className="form-group">
@@ -1395,6 +1679,317 @@ function TournamentDetail() {
                     <TrashIcon className="icon" />
                     Delete Tournament
                   </button>
+                </div>
+              )}
+                </>
+              )}
+
+              {/* Rounds Tab */}
+              {editTab === 'rounds' && (
+                <div className="rounds-editor">
+                  {/* Notification */}
+                  {notification && (
+                    <div className={`notification notification-${notification.type}`}>
+                      <span className="notification-message">{notification.message}</span>
+                      <button
+                        className="notification-close"
+                        onClick={() => setNotification(null)}
+                        aria-label="Close notification"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="rounds-header">
+                    <p className="rounds-info">
+                      Manage tournament rounds. {isAdmin && 'All admins can edit rounds.'}
+                    </p>
+                    {isAdmin && (
+                      <button
+                        onClick={handleAddRound}
+                        className={`button primary ${roundOperationLoading ? 'loading' : ''}`}
+                        disabled={roundOperationLoading}
+                      >
+                        {roundOperationLoading ? (
+                          <>
+                            <span className="spinner-small"></span>
+                            Adding...
+                          </>
+                        ) : (
+                          <>
+                            <span className="button-icon">+</span>
+                            Add Round
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="rounds-list">
+                    {(tournament.rounds || [])
+                      .filter(round => !round.deleted)
+                      .map((round, index) => {
+                        const isExpanded = expandedRounds.has(round.id);
+                        const hasScores = !canDeleteRound(round);
+                        const statusBadge = round.status === 'completed' ? '✓' :
+                                          round.status === 'in_progress' ? '▶' : '○';
+
+                        return (
+                          <div key={round.id} className={`round-item ${isExpanded ? 'expanded' : ''}`}>
+                            <div className="round-item-header" onClick={() => toggleRoundExpansion(round.id)}>
+                              <div className="round-item-info">
+                                <div className="round-item-title">
+                                  <span className="round-status-badge">{statusBadge}</span>
+                                  <strong>{round.name || `Round ${round.roundNumber}`}</strong>
+                                </div>
+                                <div className="round-item-meta">
+                                  {round.format ? (
+                                    <span className="round-format">
+                                      {round.format.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                    </span>
+                                  ) : (
+                                    <span className="round-format-empty">No format set</span>
+                                  )}
+                                  <span className="round-date">{round.date || 'No date'}</span>
+                                </div>
+                              </div>
+                              <div className="round-item-actions" onClick={(e) => e.stopPropagation()}>
+                                <button className="icon-button" title="Expand">
+                                  {isExpanded ? '▲' : '▼'}
+                                </button>
+                              </div>
+                            </div>
+
+                            {isExpanded && (
+                              <div className="round-item-details">
+                                {editingRoundId === round.id ? (
+                                  /* Edit Mode */
+                                  <>
+                                    <div className="round-edit-form">
+                                      <div className="form-group">
+                                        <label>Round Name</label>
+                                        <input
+                                          type="text"
+                                          className="input"
+                                          value={editingRoundData.name}
+                                          onChange={(e) => setEditingRoundData({ ...editingRoundData, name: e.target.value })}
+                                          placeholder="Round name"
+                                        />
+                                      </div>
+
+                                      <div className="form-group">
+                                        <label>Date</label>
+                                        <input
+                                          type="date"
+                                          className="input"
+                                          value={editingRoundData.date}
+                                          onChange={(e) => setEditingRoundData({ ...editingRoundData, date: e.target.value })}
+                                        />
+                                      </div>
+
+                                      <div className="form-group">
+                                        <label>Format</label>
+                                        <select
+                                          className="input"
+                                          value={editingRoundData.format || ''}
+                                          onChange={(e) => setEditingRoundData({ ...editingRoundData, format: e.target.value || null })}
+                                        >
+                                          <option value="">Select format...</option>
+                                          <optgroup label="Individual Formats">
+                                            <option value="individual_stroke">Individual Stroke Play</option>
+                                            <option value="individual_stableford">Individual Stableford</option>
+                                          </optgroup>
+                                          <optgroup label="Match Play Formats">
+                                            <option value="match_play_singles">Match Play Singles</option>
+                                            <option value="four_ball">Four Ball</option>
+                                            <option value="foursomes">Foursomes</option>
+                                          </optgroup>
+                                          <optgroup label="Team Formats">
+                                            <option value="scramble">Scramble</option>
+                                            <option value="shamble">Shamble</option>
+                                            <option value="best_ball">Best Ball</option>
+                                            <option value="team_stableford">Team Stableford</option>
+                                          </optgroup>
+                                        </select>
+                                        {editingRoundData.format !== round.format && (round.scorecards?.length > 0 || round.teamScorecards?.length > 0 || round.matches?.length > 0) && (
+                                          <div className="form-hint warning">
+                                            ⚠ Changing format will clear existing scoring configurations
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Configuration Buttons */}
+                                    <div className="round-config-section">
+                                      <div className="round-config-label">Round Configuration</div>
+                                      <div className="round-config-buttons">
+                                        <button
+                                          onClick={() => handleConfigureRoundCourse(round)}
+                                          className={`button ${!editingRoundData.format ? 'disabled' : 'secondary'}`}
+                                          disabled={!editingRoundData.format}
+                                          title={!editingRoundData.format ? 'Select format first' : 'Configure course holes'}
+                                        >
+                                          Configure Course
+                                        </button>
+                                        <button
+                                          onClick={() => handleSetupRoundScoring(round)}
+                                          className={`button ${!editingRoundData.format || !round.courseData?.holes?.length ? 'disabled' : 'secondary'}`}
+                                          disabled={!editingRoundData.format || !round.courseData?.holes?.length}
+                                          title={!editingRoundData.format ? 'Select format first' : !round.courseData?.holes?.length ? 'Configure course first' : 'Setup matches/scorecards'}
+                                        >
+                                          Setup Scoring
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    <div className="round-item-buttons">
+                                      <button
+                                        onClick={handleCancelEditRound}
+                                        className="button secondary"
+                                        disabled={roundOperationLoading}
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        onClick={() => handleUpdateRound(round.id)}
+                                        className={`button primary ${roundOperationLoading ? 'loading' : ''}`}
+                                        disabled={roundOperationLoading}
+                                      >
+                                        {roundOperationLoading ? (
+                                          <>
+                                            <span className="spinner-small"></span>
+                                            Saving...
+                                          </>
+                                        ) : (
+                                          'Save Changes'
+                                        )}
+                                      </button>
+                                    </div>
+                                  </>
+                                ) : (
+                                  /* View Mode */
+                                  <>
+                                    <div className="round-detail-row">
+                                      <label>Round Number:</label>
+                                      <span>{round.roundNumber}</span>
+                                    </div>
+                                    <div className="round-detail-row">
+                                      <label>Status:</label>
+                                      <span className={`status-badge status-${round.status}`}>
+                                        {round.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                      </span>
+                                    </div>
+                                    <div className="round-detail-row">
+                                      <label>Name:</label>
+                                      <span>{round.name || `Round ${round.roundNumber}`}</span>
+                                    </div>
+                                    <div className="round-detail-row">
+                                      <label>Date:</label>
+                                      <span>{round.date || 'Not set'}</span>
+                                    </div>
+                                    <div className="round-detail-row">
+                                      <label>Format:</label>
+                                      <span>{round.format ? round.format.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Not set'}</span>
+                                    </div>
+                                    <div className="round-detail-row">
+                                      <label>Course:</label>
+                                      <span>{round.courseData?.holes?.length > 0 ? `${round.courseData.holes.length} holes` : 'Not configured'}</span>
+                                    </div>
+                                    <div className="round-detail-row">
+                                      <label>Scorecards:</label>
+                                      <span>
+                                        {(round.scorecards?.length || 0) + (round.teamScorecards?.length || 0) + (round.matches?.length || 0)} total
+                                      </span>
+                                    </div>
+
+                                    {/* Configuration Buttons */}
+                                    {isAdmin && (
+                                      <div className="round-config-section">
+                                        <div className="round-config-label">Round Configuration</div>
+                                        <div className="round-config-buttons">
+                                          <button
+                                            onClick={() => handleConfigureRoundCourse(round)}
+                                            className={`button ${!round.format ? 'disabled' : 'secondary'}`}
+                                            disabled={!round.format}
+                                            title={!round.format ? 'Select format first' : 'Configure course holes'}
+                                          >
+                                            Configure Course
+                                          </button>
+                                          <button
+                                            onClick={() => handleSetupRoundScoring(round)}
+                                            className={`button ${!round.format || !round.courseData?.holes?.length ? 'disabled' : 'secondary'}`}
+                                            disabled={!round.format || !round.courseData?.holes?.length}
+                                            title={!round.format ? 'Select format first' : !round.courseData?.holes?.length ? 'Configure course first' : 'Setup matches/scorecards'}
+                                          >
+                                            Setup Scoring
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    <div className="round-item-buttons">
+                                      {isAdmin && (
+                                        <>
+                                          <button
+                                            onClick={() => handleStartEditRound(round)}
+                                            className="button secondary"
+                                          >
+                                            Edit Round
+                                          </button>
+                                          <button
+                                            onClick={() => handleDeleteRound(round.id)}
+                                            className={`button ${hasScores ? 'disabled' : 'danger'}`}
+                                            disabled={hasScores}
+                                            title={hasScores ? 'Cannot delete round with scored data' : 'Delete round'}
+                                          >
+                                            <TrashIcon className="icon" />
+                                            {hasScores ? 'Has Scores' : 'Delete'}
+                                          </button>
+                                        </>
+                                      )}
+                                      {hasScores && (
+                                        <div className="round-warning">
+                                          ⚠ This round contains scored data and cannot be deleted
+                                        </div>
+                                      )}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                    {(tournament.rounds || []).filter(r => !r.deleted).length === 0 && (
+                      <div className="empty-state">
+                        <div className="empty-state-title">No rounds yet</div>
+                        <p className="empty-state-description">
+                          Rounds are individual competition sessions within your tournament.
+                          Each round can have its own format, course, and scoring system.
+                        </p>
+                        <div className="empty-state-steps">
+                          <div className="empty-state-step">
+                            <strong>1. Add a round</strong>
+                            <span>Click the "Add Round" button above</span>
+                          </div>
+                          <div className="empty-state-step">
+                            <strong>2. Configure details</strong>
+                            <span>Set the round name, date, and format</span>
+                          </div>
+                          <div className="empty-state-step">
+                            <strong>3. Set up course</strong>
+                            <span>Configure holes, pars, and yardages</span>
+                          </div>
+                          <div className="empty-state-step">
+                            <strong>4. Start scoring</strong>
+                            <span>Create matches or scorecards and begin tracking scores</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

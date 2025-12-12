@@ -5,6 +5,7 @@ import {
 } from '../firebase/services';
 import { subscribeToTournaments } from '../firebase/tournamentServices';
 import { calculateTournamentPoints, calculateMatchStatus, getProvisionalResult } from '../utils/scoring';
+import { mapFormatToRoute } from '../utils/formatMapping';
 import StablefordLeaderboard from './StablefordLeaderboard';
 import { CameraIcon } from '@heroicons/react/24/outline';
 import MediaUploader from './media/MediaUploader';
@@ -23,47 +24,14 @@ function Leaderboard() {
   const urlTournamentId = searchParams.get('t');
 
   useEffect(() => {
-    console.log('Leaderboard useEffect mounting');
     const unsubPlayers = subscribeToPlayers(setPlayers);
     const unsubTournaments = subscribeToTournaments((tournamentsData) => {
-      console.log('🎾 TOURNAMENT SUBSCRIPTION CALLBACK:', {
-        totalCount: tournamentsData.length,
-        tournaments: tournamentsData.map(t => ({
-          id: t.id,
-          name: t.name,
-          status: t.status,
-          hasTeams: t.hasTeams,
-          teamsCount: t.teams?.length || 0,
-          roundsCount: t.rounds?.length || 0
-        }))
-      });
-
-      // Log tournament categorization
-      const openTournaments = tournamentsData.filter(t =>
-        t.status === 'in_progress' || t.status === 'setup'
-      );
-      const completedTournaments = tournamentsData.filter(t => t.status === 'completed');
-      const otherTournaments = tournamentsData.filter(t =>
-        t.status !== 'in_progress' && t.status !== 'setup' && t.status !== 'completed'
-      );
-
-      console.log('📊 TOURNAMENT CATEGORIZATION:', {
-        total: tournamentsData.length,
-        open: openTournaments.length,
-        completed: completedTournaments.length,
-        other: otherTournaments.length,
-        openList: openTournaments.map(t => `${t.name} (${t.status})`),
-        completedList: completedTournaments.map(t => `${t.name} (${t.status})`),
-        otherList: otherTournaments.map(t => `${t.name} (${t.status || 'NO STATUS'})`)
-      });
-
       setTournaments(tournamentsData);
 
       // First priority: Check for tournament from URL parameter (even if one is already selected)
       if (urlTournamentId && tournamentsData.length > 0) {
         const requestedTournament = tournamentsData.find(t => t.id === urlTournamentId);
         if (requestedTournament && (!selectedTournament || selectedTournament.id !== urlTournamentId)) {
-          console.log('Selecting tournament from URL:', requestedTournament.name);
           setSelectedTournament(requestedTournament);
           // Clear URL param to avoid interference
           navigate('/leaderboard', { replace: true });
@@ -74,13 +42,11 @@ function Leaderboard() {
       // Auto-select tournament if none is selected
       if (!selectedTournament && tournamentsData.length > 0) {
         // Default: Auto-select oldest open tournament (in_progress or setup)
-        console.log('Running auto-selection logic');
         const openTournaments = tournamentsData.filter(t =>
           t.status === 'in_progress' || t.status === 'setup'
         ).sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 
         if (openTournaments.length > 0) {
-          console.log('Auto-selecting open tournament:', openTournaments[0].name);
           setSelectedTournament(openTournaments[0]);
         } else {
           // If no open tournaments, show the most recent one
@@ -88,34 +54,20 @@ function Leaderboard() {
             new Date(b.startDate) - new Date(a.startDate)
           );
           if (sortedByDate.length > 0) {
-            console.log('Auto-selecting most recent tournament:', sortedByDate[0].name);
             setSelectedTournament(sortedByDate[0]);
           }
         }
-      } else {
-        console.log('Skipping auto-selection:', {
-          hasSelectedTournament: !!selectedTournament,
-          tournamentsCount: tournamentsData.length
-        });
       }
     });
 
     return () => {
-      console.log('Leaderboard useEffect cleanup');
       unsubPlayers();
       unsubTournaments();
     };
-  }, [selectedTournament, urlTournamentId, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTournament, urlTournamentId]);
 
   // Get teams and matches from selected tournament
-  console.log('Rendering Leaderboard - selectedTournament:', selectedTournament ? {
-    id: selectedTournament.id,
-    name: selectedTournament.name,
-    hasTeams: selectedTournament.hasTeams,
-    teamsCount: selectedTournament.teams?.length || 0,
-    roundsCount: selectedTournament.rounds?.length || 0
-  } : 'null/undefined');
-
   const teams = selectedTournament?.teams || [];
   const team1 = teams[0]; // First team
   const team2 = teams[1]; // Second team
@@ -126,33 +78,14 @@ function Leaderboard() {
   // Get all team scorecards from all rounds (for scramble, shamble, best_ball, team_stableford formats)
   // Include round info for navigation
   const teamScorecards = selectedTournament?.rounds?.flatMap(round =>
-    (round.teamScorecards || []).map(sc => {
-      // Map format to route path (database uses underscores, routes use hyphens)
-      const routeFormat = round.format === 'best_ball' ? 'bestball'
-                        : round.format === 'team_stableford' ? 'team-stableford'
-                        : round.format;
-
-      return {
-        ...sc,
-        roundId: round.id,
-        roundName: round.name,
-        format: routeFormat,
-        tournamentId: selectedTournament.id
-      };
-    })
-  ) || [];
-
-  console.log('Leaderboard Debug:', {
-    hasTeams: selectedTournament?.hasTeams,
-    teams: selectedTournament?.teams?.map(t => ({ id: t.id, name: t.name })),
-    matchesCount: matches.length,
-    teamScorecardsCount: teamScorecards.length,
-    teamScorecards: teamScorecards.map(sc => ({
-      teamId: sc.teamId,
-      teamName: sc.teamName,
-      status: sc.status
+    (round.teamScorecards || []).map(sc => ({
+      ...sc,
+      roundId: round.id,
+      roundName: round.name,
+      format: mapFormatToRoute(round.format),
+      tournamentId: selectedTournament.id
     }))
-  });
+  ) || [];
 
   // Helper function to check if a scorecard is complete
   const isScorecardComplete = (scorecard) => {
@@ -201,8 +134,6 @@ function Leaderboard() {
         }
       }
     });
-
-    console.log('Points calculated:', { team1Points, team2Points, team1Id, team2Id });
   }
 
   // Calculate projected points (including in-progress matches/scorecards)
@@ -334,35 +265,15 @@ function Leaderboard() {
   // Check if this is a team-based format
   const isTeamFormat = selectedTournament.hasTeams === true || (selectedTournament.teams && selectedTournament.teams.length > 0);
 
-  console.log('🔍 LEADERBOARD ROUTING DEBUG:', {
-    tournamentName: selectedTournament.name,
-    tournamentId: selectedTournament.id,
-    hasTeams: selectedTournament.hasTeams,
-    teamsArray: selectedTournament.teams,
-    isTeamFormat,
-    rounds: selectedTournament.rounds?.map(r => ({ name: r.name, format: r.format })),
-    teamScorecards: selectedTournament.rounds?.flatMap(r => r.teamScorecards || []),
-    matches: selectedTournament.rounds?.flatMap(r => r.matches || [])
-  });
-
   // If INDIVIDUAL stableford tournament, show Stableford leaderboard
   // Team stableford tournaments will use the regular team leaderboard below
   const hasIndividualStablefordRounds = selectedTournament.rounds?.some(r =>
     r.format === 'individual_stableford'
   );
 
-  console.log('🎯 Routing decision:', {
-    hasIndividualStablefordRounds,
-    isTeamFormat,
-    willGoToStablefordLeaderboard: hasIndividualStablefordRounds && !isTeamFormat
-  });
-
   if (hasIndividualStablefordRounds && !isTeamFormat) {
-    console.log('✅ Routing to StablefordLeaderboard');
     return <StablefordLeaderboard />;
   }
-
-  console.log('✅ Routing to regular Leaderboard');
 
   return (
     <div className="leaderboard">

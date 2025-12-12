@@ -10,9 +10,13 @@ import {
   calculateTeamStrokesReceived,
   ScrambleDriveTracker
 } from '../utils/scrambleCalculations';
+import { useAutoSave, useScoreEntry } from '../hooks';
 import {
-  QuickScoreButtons,
-  HoleNavigationGrid
+  AutoSaveIndicator,
+  HoleInfo,
+  ScoreCard,
+  ScoreEntry,
+  SubmitScorecardButton
 } from './shared';
 import './ScrambleScoring.css';
 
@@ -25,12 +29,117 @@ function ScrambleScoring() {
   const [players, setPlayers] = useState([]);
   const [teamPlayers, setTeamPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [currentHole, setCurrentHole] = useState(0);
   const [scores, setScores] = useState([]);
   const [driveSelections, setDriveSelections] = useState([]);
   const [driveTracker, setDriveTracker] = useState(null);
   const [teamHandicap, setTeamHandicap] = useState(0);
+
+  // Custom hooks
+  const currentHoleData = round?.courseData?.holes?.[currentHole];
+  const { increment, decrement } = useScoreEntry(currentHoleData?.par || 4);
+
+  // Helper to remove undefined values (Firebase doesn't accept them)
+  const cleanUndefined = (obj) => {
+    if (Array.isArray(obj)) {
+      return obj.map(item => cleanUndefined(item));
+    } else if (obj && typeof obj === 'object') {
+      const cleaned = {};
+      Object.keys(obj).forEach(key => {
+        if (obj[key] !== undefined) {
+          cleaned[key] = cleanUndefined(obj[key]);
+        }
+      });
+      return cleaned;
+    }
+    return obj;
+  };
+
+  const autoSaveScore = async (updatedScores, updatedDriveSelections = driveSelections) => {
+    if (!team || !round || !tournament) return;
+
+    try {
+      const totalScore = calculateTotalScoreWithScores(updatedScores);
+
+      // Determine current status based on scores
+      const holesWithScores = updatedScores.filter(h => h.grossScore !== null && h.grossScore !== undefined).length;
+      const allHolesComplete = holesWithScores === updatedScores.length;
+      const status = holesWithScores === 0 ? 'not_started' : (allHolesComplete ? 'completed' : 'in_progress');
+
+      const scorecard = {
+        teamId: teamId,
+        teamName: team.name,
+        holes: updatedScores,
+        driveSelections: updatedDriveSelections,
+        totalGross: totalScore.gross,
+        totalNet: totalScore.net,
+        teamHandicap: teamHandicap,
+        status: status,
+        currentHole: currentHole,
+        updatedAt: new Date().toISOString()
+      };
+
+      const roundIndex = tournament.rounds.findIndex(r => r.id === roundId);
+      const updatedRounds = [...tournament.rounds];
+
+      if (!updatedRounds[roundIndex].teamScorecards) {
+        updatedRounds[roundIndex].teamScorecards = [];
+      }
+
+      const existingIndex = updatedRounds[roundIndex].teamScorecards.findIndex(
+        sc => sc.teamId === teamId
+      );
+
+      if (existingIndex >= 0) {
+        updatedRounds[roundIndex].teamScorecards[existingIndex] = scorecard;
+      } else {
+        updatedRounds[roundIndex].teamScorecards.push(scorecard);
+      }
+
+      // CRITICAL: Update round status based on all scorecards
+      const roundScorecards = updatedRounds[roundIndex].teamScorecards;
+      const allNotStarted = roundScorecards.every(sc => sc.status === 'not_started');
+      const allCompleted = roundScorecards.every(sc => sc.status === 'completed');
+
+      if (allCompleted) {
+        updatedRounds[roundIndex].status = 'completed';
+      } else if (allNotStarted) {
+        updatedRounds[roundIndex].status = 'not_started';
+      } else {
+        updatedRounds[roundIndex].status = 'in_progress';
+      }
+
+      // CRITICAL: Update tournament status based on all rounds
+      const allRoundsNotStarted = updatedRounds.filter(r => !r.deleted).every(r =>
+        r.status === 'not_started' || r.status === 'setup'
+      );
+      const allRoundsCompleted = updatedRounds.filter(r => !r.deleted).every(r =>
+        r.status === 'completed'
+      );
+
+      let tournamentStatus;
+      if (allRoundsCompleted) {
+        tournamentStatus = 'completed';
+      } else if (allRoundsNotStarted) {
+        tournamentStatus = 'setup';
+      } else {
+        tournamentStatus = 'in_progress';
+      }
+
+      // Clean undefined values before saving to Firebase
+      const cleanedUpdate = cleanUndefined({
+        rounds: updatedRounds,
+        status: tournamentStatus,
+        updatedAt: new Date().toISOString()
+      });
+
+      await updateDoc(doc(db, 'tournaments', tournamentId), cleanedUpdate);
+    } catch (error) {
+      console.error('Error auto-saving:', error);
+    }
+  };
+
+  const { isSaving, save: triggerAutoSave } = useAutoSave(autoSaveScore, 1000);
 
   useEffect(() => {
     const unsubTournament = subscribeToTournament(tournamentId, (tournamentData) => {
@@ -118,6 +227,22 @@ function ScrambleScoring() {
       grossScore: grossScore
     };
     setScores(newScores);
+
+    if (grossScore !== null && grossScore !== '') {
+      triggerAutoSave(newScores, driveSelections);
+    }
+  };
+
+  const incrementScore = () => {
+    const currentScore = scores[currentHole]?.grossScore;
+    const newScore = increment(currentScore);
+    handleScoreChange(currentHole, newScore);
+  };
+
+  const decrementScore = () => {
+    const currentScore = scores[currentHole]?.grossScore;
+    const newScore = decrement(currentScore);
+    handleScoreChange(currentHole, newScore);
   };
 
   const handleDriveSelection = (holeIndex, playerId) => {
@@ -143,13 +268,9 @@ function ScrambleScoring() {
 
       setDriveTracker(newTracker);
     }
-  };
 
-  const handleQuickScore = (holeIndex, grossScore) => {
-    handleScoreChange(holeIndex, grossScore);
-    if (holeIndex < 17) {
-      setTimeout(() => setCurrentHole(holeIndex + 1), 300);
-    }
+    // Auto-save drive selection
+    triggerAutoSave(scores, newSelections);
   };
 
   const calculateNetScore = (grossScore, holeStrokeIndex) => {
@@ -158,9 +279,9 @@ function ScrambleScoring() {
     return grossScore - strokesReceived;
   };
 
-  const calculateTotalScore = () => {
-    const gross = scores.reduce((sum, hole) => sum + (hole.grossScore || 0), 0);
-    const net = scores.reduce((sum, hole, index) => {
+  const calculateTotalScoreWithScores = (scoreData) => {
+    const gross = scoreData.reduce((sum, hole) => sum + (hole.grossScore || 0), 0);
+    const net = scoreData.reduce((sum, hole, index) => {
       if (!hole.grossScore) return sum;
       const holeData = round?.courseData?.holes?.[index];
       if (!holeData) return sum;
@@ -171,26 +292,27 @@ function ScrambleScoring() {
     return { gross, net };
   };
 
-  const handleSaveScore = async () => {
-    setSaving(true);
+  const calculateTotalScore = () => {
+    return calculateTotalScoreWithScores(scores);
+  };
 
-    try {
-      // Validate drive requirements if enforced
-      const config = round?.scrambleConfig || {};
-      if (config.enforceDriveRequirements && driveTracker) {
-        const validation = driveTracker.validate();
-        if (!validation.isValid) {
-          const message = validation.violations.map(v =>
-            `${v.playerName}: ${v.used}/${v.required} drives (${v.missing} missing)`
-          ).join('\n');
+  const handleSubmit = async () => {
+    // Validate drive requirements if enforced
+    const config = round?.scrambleConfig || {};
+    if (config.enforceDriveRequirements && driveTracker) {
+      const validation = driveTracker.validate();
+      if (!validation.isValid) {
+        const message = validation.violations.map(v =>
+          `${v.playerName}: ${v.used}/${v.required} drives (${v.missing} missing)`
+        ).join('\n');
 
-          if (!window.confirm(`Drive requirements not met:\n\n${message}\n\nSave anyway?`)) {
-            setSaving(false);
-            return;
-          }
+        if (!window.confirm(`Drive requirements not met:\n\n${message}\n\nSubmit anyway?`)) {
+          return false;
         }
       }
+    }
 
+    try {
       const roundIndex = tournament.rounds.findIndex(r => r.id === roundId);
       const updatedRounds = [...tournament.rounds];
 
@@ -223,17 +345,52 @@ function ScrambleScoring() {
         updatedRounds[roundIndex].teamScorecards.push(scorecard);
       }
 
-      await updateDoc(doc(db, 'tournaments', tournamentId), {
-        rounds: updatedRounds
+      // CRITICAL: Update round status based on all scorecards
+      const roundScorecards = updatedRounds[roundIndex].teamScorecards;
+      const allNotStarted = roundScorecards.every(sc => sc.status === 'not_started');
+      const allCompleted = roundScorecards.every(sc => sc.status === 'completed');
+
+      if (allCompleted) {
+        updatedRounds[roundIndex].status = 'completed';
+        updatedRounds[roundIndex].completedAt = new Date().toISOString();
+      } else if (allNotStarted) {
+        updatedRounds[roundIndex].status = 'not_started';
+      } else {
+        updatedRounds[roundIndex].status = 'in_progress';
+      }
+
+      // CRITICAL: Update tournament status based on all rounds
+      const allRoundsNotStarted = updatedRounds.filter(r => !r.deleted).every(r =>
+        r.status === 'not_started' || r.status === 'setup'
+      );
+      const allRoundsCompleted = updatedRounds.filter(r => !r.deleted).every(r =>
+        r.status === 'completed'
+      );
+
+      let tournamentStatus;
+      if (allRoundsCompleted) {
+        tournamentStatus = 'completed';
+      } else if (allRoundsNotStarted) {
+        tournamentStatus = 'setup';
+      } else {
+        tournamentStatus = 'in_progress';
+      }
+
+      // Clean undefined values before saving to Firebase
+      const cleanedUpdate = cleanUndefined({
+        rounds: updatedRounds,
+        status: tournamentStatus,
+        updatedAt: new Date().toISOString()
       });
 
-      alert('Score saved successfully!');
+      await updateDoc(doc(db, 'tournaments', tournamentId), cleanedUpdate);
+
       navigate(`/tournaments/${tournamentId}`);
+      return true;
     } catch (error) {
       console.error('Error saving score:', error);
       alert('Failed to save score. Please try again.');
-    } finally {
-      setSaving(false);
+      return false;
     }
   };
 
@@ -247,10 +404,11 @@ function ScrambleScoring() {
     );
   }
 
-  const currentHoleData = round.courseData?.holes?.[currentHole];
   const currentScore = scores[currentHole];
   const currentDriveSelection = driveSelections[currentHole];
   const config = round?.scrambleConfig || {};
+  const currentNetScore = calculateNetScore(currentScore?.grossScore, currentHoleData?.strokeIndex);
+  const totalScore = calculateTotalScore();
 
   return (
     <div className="scramble-scoring">
@@ -266,22 +424,18 @@ function ScrambleScoring() {
           </button>
 
           <div className="header-info">
-            <h1>{team.name}</h1>
-            <p className="tournament-info">{tournament.name} - Round {tournament.rounds.findIndex(r => r.id === roundId) + 1}</p>
-            <div className="team-handicap">Team Handicap: {teamHandicap}</div>
+            <h1>{team.name} - Scramble</h1>
+            <p className="tournament-info">{tournament.name} - {round.name}</p>
+            <div className="format-info">
+              Scramble • Team Handicap: {teamHandicap}
+            </div>
           </div>
 
-          <button
-            onClick={handleSaveScore}
-            className="button primary"
-            disabled={saving}
-          >
-            {saving ? 'Saving...' : 'Save Score'}
-          </button>
+          <AutoSaveIndicator isSaving={isSaving} />
         </div>
 
         {/* Team Players */}
-        <div className="team-players-info">
+        <div className="team-players-info card">
           <h3>Team Members</h3>
           <div className="players-list">
             {teamPlayers.map(player => (
@@ -300,20 +454,14 @@ function ScrambleScoring() {
         </div>
 
         {/* Current Hole */}
-        <div className="current-hole-section">
-          <div className="hole-header">
-            <h2>Hole {currentHole + 1}</h2>
-            <div className="hole-details">
-              <span className="hole-par">Par {currentHoleData?.par}</span>
-              <span className="hole-si">SI {currentHoleData?.strokeIndex}</span>
-              {teamHandicap > 0 && calculateTeamStrokesReceived(teamHandicap, currentHoleData?.strokeIndex) > 0 && (
-                <span className="strokes-received">
-                  {calculateTeamStrokesReceived(teamHandicap, currentHoleData?.strokeIndex)} stroke
-                  {calculateTeamStrokesReceived(teamHandicap, currentHoleData?.strokeIndex) > 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-          </div>
+        <div className="current-hole-section card">
+          <HoleInfo
+            holeNumber={currentHole + 1}
+            par={currentHoleData?.par}
+            strokeIndex={currentHoleData?.strokeIndex}
+            yardage={currentHoleData?.yardage}
+            name={currentHoleData?.name}
+          />
 
           {/* Drive Selection */}
           {config.enforceDriveRequirements && (
@@ -339,6 +487,9 @@ function ScrambleScoring() {
                       <div className="drive-option-content">
                         <span className="player-name">{player.name}</span>
                         {needsMore && <span className="warning-badge">⚠️ Needs drives</span>}
+                        <span className="drive-count-badge">
+                          {status?.used || 0}/{config.minDrivesPerPlayer}
+                        </span>
                       </div>
                       {currentDriveSelection === player.id && (
                         <CheckIcon className="selected-icon" />
@@ -351,73 +502,144 @@ function ScrambleScoring() {
           )}
 
           {/* Score Entry */}
-          <QuickScoreButtons
-            onSelect={(score) => handleQuickScore(currentHole, score)}
-            selectedScore={currentScore?.grossScore}
+          <ScoreEntry
+            value={currentScore?.grossScore || ''}
+            onChange={(value) => handleScoreChange(currentHole, value)}
+            onIncrement={incrementScore}
+            onDecrement={decrementScore}
+            label="Gross Score"
             min={1}
-            max={12}
-            title="Team Score"
+            max={15}
           />
 
-          {currentScore?.grossScore && (
-            <div className="score-summary">
-              <div className="score-detail">
-                <span className="label">Gross:</span>
-                <span className="value">{currentScore.grossScore}</span>
-              </div>
-              <div className="score-detail">
-                <span className="label">Net:</span>
-                <span className="value">
-                  {calculateNetScore(currentScore.grossScore, currentHoleData?.strokeIndex)}
-                </span>
-              </div>
-              <div className="score-detail">
-                <span className="label">vs Par:</span>
-                <span className={`value ${
-                  calculateNetScore(currentScore.grossScore, currentHoleData?.strokeIndex) < currentHoleData?.par
-                    ? 'under-par'
-                    : calculateNetScore(currentScore.grossScore, currentHoleData?.strokeIndex) > currentHoleData?.par
-                    ? 'over-par'
-                    : 'even-par'
-                }`}>
-                  {calculateNetScore(currentScore.grossScore, currentHoleData?.strokeIndex) === currentHoleData?.par
-                    ? 'Par'
-                    : calculateNetScore(currentScore.grossScore, currentHoleData?.strokeIndex) < currentHoleData?.par
-                    ? `${currentHoleData?.par - calculateNetScore(currentScore.grossScore, currentHoleData?.strokeIndex)} under`
-                    : `${calculateNetScore(currentScore.grossScore, currentHoleData?.strokeIndex) - currentHoleData?.par} over`
-                  }
-                </span>
-              </div>
+          {/* Net Score Display */}
+          {teamHandicap > 0 && currentScore?.grossScore && (
+            <div className="net-score-display">
+              <span className="net-score-label">Net Score:</span>
+              <span className="net-score-value">{currentNetScore}</span>
             </div>
           )}
+
+          {/* Hole Navigation Buttons */}
+          <div className="hole-navigation-buttons">
+            <button
+              onClick={() => setCurrentHole(Math.max(0, currentHole - 1))}
+              disabled={currentHole === 0}
+              className="nav-btn secondary"
+            >
+              ← Previous Hole
+            </button>
+            <button
+              onClick={() => setCurrentHole(Math.min(17, currentHole + 1))}
+              disabled={currentHole === 17}
+              className="nav-btn secondary"
+            >
+              Next Hole →
+            </button>
+          </div>
         </div>
 
-        {/* Hole Navigation Grid */}
-        <HoleNavigationGrid
-          currentHole={currentHole}
-          onHoleSelect={setCurrentHole}
-          completedHoles={scores.map(h => !!h.grossScore)}
-          title="Holes"
-        />
-
-        {/* Total Score */}
-        <div className="total-score-section">
-          <h3>Total Score</h3>
+        {/* Round Totals */}
+        <div className="total-score-section card">
+          <h3>Round Totals</h3>
           <div className="total-scores">
             <div className="total-item">
-              <span className="label">Gross:</span>
-              <span className="value">{calculateTotalScore().gross || 0}</span>
+              <span className="label">Gross</span>
+              <span className="value">{totalScore.gross || 0}</span>
             </div>
             <div className="total-item">
-              <span className="label">Net:</span>
-              <span className="value">{calculateTotalScore().net || 0}</span>
+              <span className="label">Net</span>
+              <span className="value">{totalScore.net || 0}</span>
             </div>
             <div className="total-item">
-              <span className="label">Team HCP:</span>
-              <span className="value">{teamHandicap}</span>
+              <span className="label">To Par</span>
+              <span className="value">
+                {(() => {
+                  const totalNet = totalScore.net || 0;
+                  let completedHolesPar = 0;
+                  for (let i = 0; i < 18; i++) {
+                    if (scores[i]?.grossScore !== null && round?.courseData?.holes?.[i]) {
+                      completedHolesPar += round.courseData.holes[i].par;
+                    }
+                  }
+                  const toPar = totalNet - completedHolesPar;
+                  return toPar === 0 ? 'E' : (toPar > 0 ? `+${toPar}` : toPar);
+                })()}
+              </span>
+            </div>
+            <div className="total-item">
+              <span className="label">Holes Completed</span>
+              <span className="value">
+                {scores.filter(h => h?.grossScore !== null).length} / 18
+              </span>
             </div>
           </div>
         </div>
+
+        {/* Scorecard */}
+        <div className="card">
+          <ScoreCard
+            holes={round.courseData?.holes || []}
+            format="individual_stroke"
+            scoringData={[{
+              label: team.name,
+              scores: scores.map((hole, idx) => {
+                const holeData = round?.courseData?.holes?.[idx];
+                const netScore = hole?.grossScore ? calculateNetScore(hole.grossScore, holeData?.strokeIndex) : null;
+                return {
+                  grossScore: hole?.grossScore || null,
+                  netScore: netScore
+                };
+              })
+            }]}
+            currentHole={currentHole + 1}
+          />
+        </div>
+
+        {/* Drive Totals */}
+        {config.enforceDriveRequirements && driveTracker && (
+          <div className="card drive-totals-section">
+            <h3>Drive Usage Summary</h3>
+            <div className="drive-totals-grid">
+              {teamPlayers.map(player => {
+                const status = driveTracker.getPlayerStatus(player.id, 18);
+                const isCompliant = status.used >= config.minDrivesPerPlayer;
+                return (
+                  <div key={player.id} className={`drive-total-item ${isCompliant ? 'compliant' : 'needs-more'}`}>
+                    <div className="drive-total-player">
+                      <span className="player-name">{player.name}</span>
+                      {!isCompliant && <span className="warning-icon">⚠️</span>}
+                    </div>
+                    <div className="drive-total-count">
+                      <span className="drives-used">{status.used}</span>
+                      <span className="drives-separator">/</span>
+                      <span className="drives-required">{config.minDrivesPerPlayer}</span>
+                      <span className="drives-label">drives</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {(() => {
+              const validation = driveTracker.validate();
+              if (!validation.isValid) {
+                return (
+                  <div className="drive-warning">
+                    <span className="warning-icon">⚠️</span>
+                    <span>Some players have not met the minimum drive requirement</span>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <SubmitScorecardButton
+          onSubmit={handleSubmit}
+          buttonText="Submit Scramble Score"
+        />
       </div>
     </div>
   );

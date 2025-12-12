@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo:*)",
+      "Bash(\"C:\\ai\\RyderCup\\src\\components\\HonoursBoard.css\")",
+      "Bash(npm install:*)",
+      "Bash(npm start)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(nul)",
+      "Bash(npm run build:*)",
+      "Bash(firebase --version:*)",
+      "Bash(firebase login:list:*)",
+      "Bash(firebase projects:list:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(git add:*)",
+      "Bash(del nul 2)",
+      "Bash(NUL)",
+      "Bash(git reset:*)",
+      "Bash(.gitignore)",
+      "Bash(npx eslint:*)",
+      "Bash(npm run test:once:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nFix: Resolve all ESLint issues (30 problems → 0)\n\nESLint cleanup - resolved all 30 lint problems:\n\nPhase 1 - Auto-fix (2 errors):\n- Fixed import order in test files\n- tournamentServices.test.js\n- initializePlayers.test.js\n\nPhase 2 - Remove unused code (13 warnings):\nRemoved unused imports:\n- useEffect from RoundTeamScorecardSetup.js\n- getTournaments, Cog6ToothIcon from TournamentDashboard.js\n- getScoreDescription from StablefordScoring.js\n- listAll from mediaServices.js\n\nRemoved unused variables:\n- handleQuickScore, bestScore from BestBallScoring.js\n- getTeeColorDisplay from CourseLibrary.js\n- setLoading from RoundTeamScorecardSetup.js\n- currentHoleScore from ScorecardScoring.js\n- getHoleScoreDetails from Scoring.js (commented)\n- getOrdinalSuffix from SeriesLeaderboard.js\n- handleQuickScore from StablefordScoring.js\n- front9Up, back9Up from ScoreCard.js\n- calculateBestScore from BestBallScoring.js\n- calculateStableford from Scoring.js (commented)\n\nPhase 3 - Fix React Hook dependencies (11 warnings):\n- AnomalyLogs.js - wrapped loadLogs with useCallback\n- HonoursBoard.js\n- MultiDayLeaderboard.js\n- PlayoffManager.js\n- RoundStartModal.js\n- SeriesDashboard.js\n- SeriesLeaderboard.js (2 instances)\n- StablefordLeaderboard.js\n- StablefordScoring.js (2 instances)\n- MediaViewer.js\n\nPhase 4 - Fix ref cleanup (1 warning):\n- useMobileOptimizations.js - captured ref.current before cleanup\n\nImpact:\n- Build compiles with 0 warnings\n- All 158 tests passing\n- No functionality broken\n- Cleaner, more maintainable code\n- Updated .gitignore (added nul, test_output.txt)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(while read f)",
+      "Bash(do grep -l leaderboard $f)",
+      "Bash(done)",
+      "Bash(git push)",
+      "Bash(tasklist:*)",
+      "Bash(timeout /t 10)",
+      "Bash(dir:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

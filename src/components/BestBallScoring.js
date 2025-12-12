@@ -32,17 +32,52 @@ function BestBallScoring() {
   const currentHoleData = round?.courseData?.holes?.[currentHole];
   const { increment, decrement } = useScoreEntry(currentHoleData?.par || 4);
 
+  // Helper to remove undefined values (Firebase doesn't accept them)
+  const cleanUndefined = (obj) => {
+    if (Array.isArray(obj)) {
+      return obj.map(item => cleanUndefined(item));
+    } else if (obj && typeof obj === 'object') {
+      const cleaned = {};
+      Object.keys(obj).forEach(key => {
+        if (obj[key] !== undefined) {
+          cleaned[key] = cleanUndefined(obj[key]);
+        }
+      });
+      return cleaned;
+    }
+    return obj;
+  };
+
   const autoSaveScore = async (updatedPlayerScores) => {
     if (!team || !round || !tournament) return;
 
     try {
       const totalScore = calculateTotalScoreWithScores(updatedPlayerScores);
 
+      // Determine current status based on scores
+      // Check across all players to see if any holes have scores
+      let holesWithScores = 0;
+      const totalHoles = 18;
+
+      for (let holeNum = 1; holeNum <= totalHoles; holeNum++) {
+        // Check if at least one player has a score for this hole
+        const hasScore = Object.values(updatedPlayerScores).some(playerHoles => {
+          const hole = playerHoles.find(h => h.holeNumber === holeNum);
+          return hole && hole.grossScore !== null && hole.grossScore !== undefined;
+        });
+        if (hasScore) holesWithScores++;
+      }
+
+      const allHolesComplete = holesWithScores === totalHoles;
+      const status = holesWithScores === 0 ? 'not_started' : (allHolesComplete ? 'completed' : 'in_progress');
+
       const scorecard = {
         teamId: teamId,
         teamName: team.name,
         playerScores: updatedPlayerScores,
         ...totalScore,
+        status: status,
+        currentHole: currentHole,
         updatedAt: new Date().toISOString()
       };
 
@@ -63,9 +98,44 @@ function BestBallScoring() {
         updatedRounds[roundIndex].teamScorecards.push(scorecard);
       }
 
-      await updateDoc(doc(db, 'tournaments', tournamentId), {
-        rounds: updatedRounds
+      // CRITICAL: Update round status based on all scorecards
+      const roundScorecards = updatedRounds[roundIndex].teamScorecards;
+      const allNotStarted = roundScorecards.every(sc => sc.status === 'not_started');
+      const allCompleted = roundScorecards.every(sc => sc.status === 'completed');
+
+      if (allCompleted) {
+        updatedRounds[roundIndex].status = 'completed';
+      } else if (allNotStarted) {
+        updatedRounds[roundIndex].status = 'not_started';
+      } else {
+        updatedRounds[roundIndex].status = 'in_progress';
+      }
+
+      // CRITICAL: Update tournament status based on all rounds
+      const allRoundsNotStarted = updatedRounds.filter(r => !r.deleted).every(r =>
+        r.status === 'not_started' || r.status === 'setup'
+      );
+      const allRoundsCompleted = updatedRounds.filter(r => !r.deleted).every(r =>
+        r.status === 'completed'
+      );
+
+      let tournamentStatus;
+      if (allRoundsCompleted) {
+        tournamentStatus = 'completed';
+      } else if (allRoundsNotStarted) {
+        tournamentStatus = 'setup';
+      } else {
+        tournamentStatus = 'in_progress';
+      }
+
+      // Clean undefined values before saving to Firebase
+      const cleanedUpdate = cleanUndefined({
+        rounds: updatedRounds,
+        status: tournamentStatus,
+        updatedAt: new Date().toISOString()
       });
+
+      await updateDoc(doc(db, 'tournaments', tournamentId), cleanedUpdate);
     } catch (error) {
       console.error('Error auto-saving:', error);
     }

@@ -156,6 +156,9 @@ export const createTournament = async (tournamentData) => {
     format: tournamentData.format,
     status: 'setup', // 'setup', 'in_progress', 'completed'
 
+    // Team flag
+    hasTeams: tournamentData.hasTeams || false,
+
     // Participants
     players: tournamentData.players || [],
 
@@ -224,10 +227,11 @@ export const createTournament = async (tournamentData) => {
  */
 export const updateTournament = async (tournamentId, tournamentData) => {
   const docRef = doc(db, COLLECTIONS.TOURNAMENTS, tournamentId);
-  await updateDoc(docRef, {
+  const cleanedData = removeUndefined({
     ...tournamentData,
     updatedAt: new Date().toISOString()
   });
+  await updateDoc(docRef, cleanedData);
 };
 
 /**

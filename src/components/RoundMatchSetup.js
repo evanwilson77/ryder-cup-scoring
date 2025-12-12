@@ -218,6 +218,20 @@ function RoundMatchSetup({ round, tournament, onSave, onClose }) {
             match.team2Players.length !== requiredPlayers) {
           return false;
         }
+
+        // Validate that all team1 players are actually on team1
+        for (const playerId of match.team1Players) {
+          if (!team1?.players?.includes(playerId)) {
+            return false;
+          }
+        }
+
+        // Validate that all team2 players are actually on team2
+        for (const playerId of match.team2Players) {
+          if (!team2?.players?.includes(playerId)) {
+            return false;
+          }
+        }
       }
     }
     return true;
@@ -225,7 +239,12 @@ function RoundMatchSetup({ round, tournament, onSave, onClose }) {
 
   const handleSave = () => {
     if (!validateMatches()) {
-      alert('Please ensure all matches have the correct number of players assigned.');
+      alert(
+        'Please ensure all matches are valid:\n' +
+        '- All matches must have the correct number of players\n' +
+        '- All players must be on the correct team\n\n' +
+        'If a player was moved to a different team, please remove them from this match and select a current team member.'
+      );
       return;
     }
 
@@ -440,7 +459,10 @@ function RoundMatchSetup({ round, tournament, onSave, onClose }) {
                                   {player.name} (HCP: {player.handicap.toFixed(1)})
                                 </option>
                               ))}
-                              {match.team1Players[idx] && !getAvailablePlayers('team1').find(p => p.id === match.team1Players[idx]) && (
+                              {/* Show currently assigned player even if unavailable, but ONLY if they're on the correct team */}
+                              {match.team1Players[idx] &&
+                               !getAvailablePlayers('team1').find(p => p.id === match.team1Players[idx]) &&
+                               team1?.players?.includes(match.team1Players[idx]) && (
                                 <option value={match.team1Players[idx]}>
                                   {getPlayerName(match.team1Players[idx])}
                                 </option>
@@ -467,7 +489,10 @@ function RoundMatchSetup({ round, tournament, onSave, onClose }) {
                                   {player.name} (HCP: {player.handicap.toFixed(1)})
                                 </option>
                               ))}
-                              {match.team2Players[idx] && !getAvailablePlayers('team2').find(p => p.id === match.team2Players[idx]) && (
+                              {/* Show currently assigned player even if unavailable, but ONLY if they're on the correct team */}
+                              {match.team2Players[idx] &&
+                               !getAvailablePlayers('team2').find(p => p.id === match.team2Players[idx]) &&
+                               team2?.players?.includes(match.team2Players[idx]) && (
                                 <option value={match.team2Players[idx]}>
                                   {getPlayerName(match.team2Players[idx])}
                                 </option>

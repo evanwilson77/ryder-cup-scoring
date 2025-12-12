@@ -33,6 +33,35 @@ function RoundTeamScorecardSetup({ round, tournament, onSave, onClose }) {
     // Generate team scorecards for selected teams
     const teamScorecards = selectedTeams.map(teamId => {
       const team = tournamentTeams.find(t => t.id === teamId);
+
+      // Shamble format requires playerScores structure
+      if (round.format === 'shamble') {
+        const playerScores = {};
+        (team.players || []).forEach(playerId => {
+          playerScores[playerId] = Array(18).fill(null).map((_, index) => ({
+            holeNumber: index + 1,
+            grossScore: null
+          }));
+        });
+
+        return {
+          id: `team-scorecard-${teamId}-${Date.now()}`,
+          teamId,
+          teamName: team.name,
+          teamColor: team.color,
+          playerScores, // Individual player scores for shamble
+          driveSelections: Array(18).fill(null), // Track which player's drive was used
+          holes: Array.from({ length: 18 }, (_, i) => ({
+            holeNumber: i + 1,
+            teamScore: null // Best score selected for this hole
+          })),
+          totalGross: null,
+          status: 'not_started',
+          createdAt: new Date().toISOString()
+        };
+      }
+
+      // Standard team scorecard for other formats
       return {
         id: `team-scorecard-${teamId}-${Date.now()}`,
         teamId,
