@@ -7,6 +7,11 @@ import {
 import { subscribeToPlayers } from '../firebase/services';
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from '@heroicons/react/24/outline';
 import FormatExplainerModal from './FormatExplainerModal';
+import CreationHeader from './shared/CreationHeader';
+import CreationProgressSteps from './shared/CreationProgressSteps';
+import BasicInfoStep from './shared/BasicInfoStep';
+import PlayerSelectionStep from './shared/PlayerSelectionStep';
+import TeamSetupStep from './shared/TeamSetupStep';
 import './TournamentCreation.css';
 
 function TournamentCreation() {
@@ -63,7 +68,7 @@ function TournamentCreation() {
 
       return () => unsubscribePlayers();
     } catch (error) {
-      console.error('Error loading data:', error);
+      alert('Error loading data. Please refresh the page.');
       setLoading(false);
     }
   };
@@ -366,9 +371,6 @@ function TournamentCreation() {
         tournamentData.teams = formData.teams;
       }
 
-      // Log what we're about to send for debugging
-      console.log('Creating tournament with data:', JSON.stringify(tournamentData, null, 2));
-
       // Validate no undefined values before sending
       const checkForUndefined = (obj, path = '') => {
         for (const [key, value] of Object.entries(obj)) {
@@ -398,7 +400,6 @@ function TournamentCreation() {
       const tournamentId = await createTournament(tournamentData);
       navigate(`/tournaments/${tournamentId}`);
     } catch (error) {
-      console.error('Error creating tournament:', error);
       alert(`Failed to create tournament: ${error.message}`);
       setCreating(false);
     }
@@ -423,297 +424,49 @@ function TournamentCreation() {
     <div className="tournament-creation">
       <div className="creation-container">
         {/* Header */}
-        <div className="creation-header">
-          <button onClick={() => navigate('/tournaments')} className="back-button">
-            <ArrowLeftIcon className="icon" />
-            Back to Tournaments
-          </button>
-          <h1>Create New Tournament</h1>
-          <p>Set up a new tournament for your golf series</p>
-        </div>
+        <CreationHeader
+          title="Create New Tournament"
+          subtitle="Set up a new tournament for your golf series"
+          onBack={() => navigate('/tournaments')}
+        />
 
         {/* Progress Steps */}
-        <div className="progress-steps">
-          {steps.map((step, index) => (
-            <div
-              key={step.number}
-              className={`step-item ${currentStep >= step.number ? 'active' : ''} ${
-                currentStep > step.number ? 'completed' : ''
-              }`}
-            >
-              <div className="step-indicator">
-                {currentStep > step.number ? (
-                  <CheckIcon className="check-icon" />
-                ) : (
-                  <span>{step.number}</span>
-                )}
-              </div>
-              <div className="step-content">
-                <div className="step-title">{step.title}</div>
-                <div className="step-description">{step.description}</div>
-              </div>
-              {index < steps.length - 1 && <div className="step-connector"></div>}
-            </div>
-          ))}
-        </div>
+        <CreationProgressSteps steps={steps} currentStep={currentStep} />
 
         {/* Form Content */}
         <div className="form-card">
           {/* Step 1: Basic Information */}
           {currentStep === 1 && (
-            <div className="form-step">
-              <h2>Basic Information</h2>
-              <p className="step-subtitle">Enter the essential details for your tournament</p>
-
-              <div className="form-group">
-                <label>Tournament Series</label>
-                <select
-                  value={formData.seriesId || ''}
-                  onChange={(e) => setFormData({ ...formData, seriesId: e.target.value || null })}
-                  className="form-select"
-                >
-                  <option value="">No Series (Standalone Tournament)</option>
-                  {series.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-                <p className="field-hint">Optional: Assign to a tournament series or leave standalone</p>
-              </div>
-
-              <div className="form-group">
-                <label>Tournament Name *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={`form-input ${errors.name ? 'error' : ''}`}
-                  placeholder="e.g., Autumn Classic 2025"
-                />
-                {errors.name && <p className="error-message">{errors.name}</p>}
-              </div>
-
-              <div className="form-group">
-                <label>Edition / Year</label>
-                <input
-                  type="text"
-                  value={formData.edition}
-                  onChange={(e) => setFormData({ ...formData, edition: e.target.value })}
-                  className="form-input"
-                  placeholder="e.g., 2025, October 2025"
-                />
-                <p className="field-hint">Optional: Specify the edition or year for this tournament</p>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Start Date *</label>
-                  <input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    className={`form-input ${errors.startDate ? 'error' : ''}`}
-                  />
-                  {errors.startDate && <p className="error-message">{errors.startDate}</p>}
-                </div>
-
-                <div className="form-group">
-                  <label>End Date *</label>
-                  <input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className={`form-input ${errors.endDate ? 'error' : ''}`}
-                  />
-                  {errors.endDate && <p className="error-message">{errors.endDate}</p>}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Tournament Type *</label>
-                <div className="radio-group">
-                  <label className="radio-option">
-                    <input
-                      type="radio"
-                      name="tournamentType"
-                      checked={!formData.hasTeams}
-                      onChange={() => setFormData({ ...formData, hasTeams: false })}
-                    />
-                    <span>Individual Tournament</span>
-                    <p className="radio-hint">Players compete individually</p>
-                  </label>
-                  <label className="radio-option">
-                    <input
-                      type="radio"
-                      name="tournamentType"
-                      checked={formData.hasTeams}
-                      onChange={() => setFormData({ ...formData, hasTeams: true })}
-                    />
-                    <span>Team Tournament</span>
-                    <p className="radio-hint">Players compete in teams (e.g., Ryder Cup, Scramble)</p>
-                  </label>
-                </div>
-                <p className="field-hint">Round formats will be configured in the next step</p>
-              </div>
-            </div>
+            <BasicInfoStep
+              formData={formData}
+              errors={errors}
+              series={series}
+              onChange={setFormData}
+            />
           )}
 
           {/* Step 2: Select Players */}
           {currentStep === 2 && (
-            <div className="form-step">
-              <h2>Select Players</h2>
-              <p className="step-subtitle">Choose which players will participate in this tournament</p>
-
-              {errors.players && (
-                <div className="error-banner">{errors.players}</div>
-              )}
-
-              <div className="player-selection-controls">
-                <div className="selection-summary">
-                  <span className="selected-count">{formData.selectedPlayers.length}</span>
-                  <span className="selection-text">of {players.length} players selected</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSelectAllPlayers}
-                  className="button secondary small"
-                >
-                  {formData.selectedPlayers.length === players.length ? 'Deselect All' : 'Select All'}
-                </button>
-              </div>
-
-              <div className="players-grid">
-                {players.map(player => (
-                  <div
-                    key={player.id}
-                    className={`player-card ${formData.selectedPlayers.includes(player.id) ? 'selected' : ''}`}
-                    onClick={() => handlePlayerToggle(player.id)}
-                  >
-                    <div className="player-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={formData.selectedPlayers.includes(player.id)}
-                        readOnly
-                      />
-                    </div>
-                    <div className="player-info">
-                      <div className="player-name">{player.name}</div>
-                      <div className="player-handicap">HCP: {player.handicap.toFixed(1)}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {players.length === 0 && (
-                <div className="empty-state">
-                  <p>No players found. Add players in Player Management first.</p>
-                  <button onClick={() => navigate('/players')} className="button primary">
-                    Go to Player Management
-                  </button>
-                </div>
-              )}
-            </div>
+            <PlayerSelectionStep
+              formData={formData}
+              errors={errors}
+              players={players}
+              onPlayerToggle={handlePlayerToggle}
+              onSelectAll={handleSelectAllPlayers}
+            />
           )}
 
           {/* Step 3: Setup Teams (conditional - only for team formats) */}
           {currentStep === 3 && formData.hasTeams && (
-            <div className="form-step">
-              <h2>Setup Teams</h2>
-              <p className="step-subtitle">Assign players to teams for this tournament</p>
-
-              {errors.teams && (
-                <div className="error-banner">{errors.teams}</div>
-              )}
-
-              <div className="teams-setup">
-                {formData.teams.map((team, teamIndex) => {
-                  const teamPlayers = players.filter(p => team.players.includes(p.id));
-                  const unassignedPlayers = players.filter(p =>
-                    formData.selectedPlayers.includes(p.id) &&
-                    !formData.teams.some(t => t.players.includes(p.id))
-                  );
-
-                  return (
-                    <div key={team.id} className="team-setup-card card">
-                      <div className="team-header">
-                        <div className="team-info">
-                          <input
-                            type="text"
-                            value={team.name}
-                            onChange={(e) => handleTeamNameChange(team.id, e.target.value)}
-                            className="team-name-input"
-                            placeholder="Team Name"
-                          />
-                          <div className="team-color-picker">
-                            <label>Color:</label>
-                            <input
-                              type="color"
-                              value={team.color}
-                              onChange={(e) => handleTeamColorChange(team.id, e.target.value)}
-                              className="color-input"
-                            />
-                            <span className="color-preview" style={{ backgroundColor: team.color }}></span>
-                          </div>
-                        </div>
-                        <div className="team-count">
-                          {teamPlayers.length} player{teamPlayers.length !== 1 ? 's' : ''}
-                        </div>
-                      </div>
-
-                      <div className="team-players">
-                        {teamPlayers.length > 0 ? (
-                          <div className="assigned-players">
-                            {teamPlayers.map(player => (
-                              <div key={player.id} className="team-player-item">
-                                <div className="player-details">
-                                  <span className="player-name">{player.name}</span>
-                                  <span className="player-handicap">HCP {player.handicap.toFixed(1)}</span>
-                                </div>
-                                <button
-                                  onClick={() => handleRemovePlayerFromTeam(team.id, player.id)}
-                                  className="button small danger"
-                                >
-                                  Remove
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="empty-team">No players assigned</div>
-                        )}
-                      </div>
-
-                      {teamIndex === formData.teams.length - 1 && unassignedPlayers.length > 0 && (
-                        <div className="unassigned-section">
-                          <h4>Unassigned Players</h4>
-                          <div className="unassigned-players">
-                            {unassignedPlayers.map(player => (
-                              <div key={player.id} className="unassigned-player-item">
-                                <div className="player-details">
-                                  <span className="player-name">{player.name}</span>
-                                  <span className="player-handicap">HCP {player.handicap.toFixed(1)}</span>
-                                </div>
-                                <div className="assign-buttons">
-                                  {formData.teams.map(t => (
-                                    <button
-                                      key={t.id}
-                                      onClick={() => handleAddPlayerToTeam(t.id, player.id)}
-                                      className="button small secondary"
-                                      style={{ borderColor: t.color }}
-                                    >
-                                      Add to {t.name}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <TeamSetupStep
+              formData={formData}
+              errors={errors}
+              players={players}
+              onTeamNameChange={handleTeamNameChange}
+              onTeamColorChange={handleTeamColorChange}
+              onAddPlayerToTeam={handleAddPlayerToTeam}
+              onRemovePlayerFromTeam={handleRemovePlayerFromTeam}
+            />
           )}
 
           {/* Step 3/4: Configure Rounds */}

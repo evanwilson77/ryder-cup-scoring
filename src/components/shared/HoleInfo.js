@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import './HoleInfo.css';
 
 /**
@@ -38,5 +39,22 @@ function HoleInfo({
     </div>
   );
 }
+
+HoleInfo.propTypes = {
+  /** Hole number (1-18) */
+  holeNumber: PropTypes.number.isRequired,
+  /** Par for the hole */
+  par: PropTypes.number.isRequired,
+  /** Stroke index / difficulty rating */
+  strokeIndex: PropTypes.number.isRequired,
+  /** Distance in yards (optional) */
+  yardage: PropTypes.number,
+  /** Hole name (optional) */
+  name: PropTypes.string,
+  /** Compact display mode */
+  compact: PropTypes.bool,
+  /** Additional CSS class names */
+  className: PropTypes.string
+};
 
 export default HoleInfo;

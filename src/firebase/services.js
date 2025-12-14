@@ -131,15 +131,12 @@ export const addPlayer = async (playerData) => {
 
     const docRef = await addDoc(collection(db, COLLECTIONS.PLAYERS), playerWithDefaults);
 
-    console.log(`✅ Created player account: ${playerData.name} (${email})`);
-
     // 4. Sign admin back in if they were logged in
     if (isAdmin) {
       // Note: Admin password is hardcoded here - should match AdminLogin component
       // This is a workaround because createUserWithEmailAndPassword auto-signs in
       try {
         await signInWithEmailAndPassword(auth, 'admin@rydercup.local', 'Greenacres');
-        console.log('✅ Admin re-authenticated');
       } catch (error) {
         console.error('⚠️ Could not re-authenticate admin:', error);
       }

@@ -146,8 +146,6 @@ const removeUndefined = (obj) => {
 };
 
 export const createTournament = async (tournamentData) => {
-  console.log('createTournament received:', JSON.stringify(tournamentData, null, 2));
-
   // Build tournament object, only including fields that have values
   const tournamentWithDefaults = {
     name: tournamentData.name,
@@ -215,8 +213,6 @@ export const createTournament = async (tournamentData) => {
 
   // CRITICAL: Remove any undefined values that may have slipped through
   const cleanedData = removeUndefined(tournamentWithDefaults);
-
-  console.log('About to save to Firebase:', JSON.stringify(cleanedData, null, 2));
 
   const docRef = await addDoc(collection(db, COLLECTIONS.TOURNAMENTS), cleanedData);
   return docRef.id;
@@ -398,11 +394,8 @@ export const initializeTournamentSeries = async () => {
     const existingSeries = await getTournamentSeries();
 
     if (existingSeries.length > 0) {
-      console.log('Tournament series already initialized');
       return;
     }
-
-    console.log('Initializing tournament series...');
 
     // Ryder Cup
     await createTournamentSeries({
@@ -443,8 +436,6 @@ export const initializeTournamentSeries = async () => {
       isRecurring: true,
       frequency: 'annual'
     });
-
-    console.log('✓ Successfully initialized tournament series');
   } catch (error) {
     console.error('Error initializing tournament series:', error);
     throw error;

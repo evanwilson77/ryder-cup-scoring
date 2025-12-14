@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { CameraIcon } from '@heroicons/react/24/outline';
 import MediaUploader from '../media/MediaUploader';
 import './MediaButton.css';
@@ -48,5 +49,20 @@ function MediaButton({
     </>
   );
 }
+
+MediaButton.propTypes = {
+  /** Tournament ID */
+  tournamentId: PropTypes.string.isRequired,
+  /** Round ID */
+  roundId: PropTypes.string.isRequired,
+  /** Current hole number */
+  holeNumber: PropTypes.number,
+  /** Player ID (optional) */
+  playerId: PropTypes.string,
+  /** Media category */
+  category: PropTypes.string,
+  /** Additional CSS class names */
+  className: PropTypes.string
+};
 
 export default MediaButton;

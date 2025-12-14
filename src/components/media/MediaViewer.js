@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import {
   XMarkIcon,
   ChevronLeftIcon,
@@ -232,5 +233,28 @@ function MediaViewer({ media, allMedia = [], onClose, onDelete }) {
     </div>
   );
 }
+
+MediaViewer.propTypes = {
+  /** Currently displayed media object */
+  media: PropTypes.shape({
+    id: PropTypes.string,
+    type: PropTypes.oneOf(['photo', 'video']).isRequired,
+    downloadUrl: PropTypes.string.isRequired,
+    thumbnailUrl: PropTypes.string,
+    caption: PropTypes.string,
+    holeNumber: PropTypes.number,
+    category: PropTypes.string,
+    duration: PropTypes.number,
+    uploadedAt: PropTypes.string,
+    fileName: PropTypes.string,
+    fileSize: PropTypes.number
+  }).isRequired,
+  /** Array of all media items for navigation */
+  allMedia: PropTypes.arrayOf(PropTypes.object),
+  /** Callback when viewer is closed */
+  onClose: PropTypes.func.isRequired,
+  /** Callback when delete button is clicked */
+  onDelete: PropTypes.func
+};
 
 export default MediaViewer;

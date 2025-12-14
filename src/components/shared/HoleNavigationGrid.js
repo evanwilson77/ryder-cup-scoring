@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import './HoleNavigationGrid.css';
 
 /**
@@ -40,5 +41,18 @@ function HoleNavigationGrid({
     </div>
   );
 }
+
+HoleNavigationGrid.propTypes = {
+  /** Currently selected hole index (0-17) */
+  currentHole: PropTypes.number.isRequired,
+  /** Callback when hole is selected */
+  onHoleSelect: PropTypes.func.isRequired,
+  /** Array of booleans indicating completed status for each hole */
+  completedHoles: PropTypes.arrayOf(PropTypes.bool),
+  /** Optional title for the grid */
+  title: PropTypes.string,
+  /** Additional CSS class names */
+  className: PropTypes.string
+};
 
 export default HoleNavigationGrid;

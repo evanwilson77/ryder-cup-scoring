@@ -9,10 +9,7 @@ import {
 import { subscribeToPlayers, addMatch, updateMatch } from '../firebase/services';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  ArrowLeftIcon,
   PencilIcon,
-  CheckCircleIcon,
-  CalendarIcon,
   UserGroupIcon,
   TrophyIcon,
   TrashIcon,
@@ -25,6 +22,12 @@ import RoundScorecardSetup from './RoundScorecardSetup';
 import RoundTeamScorecardSetup from './RoundTeamScorecardSetup';
 import MediaGallery from './media/MediaGallery';
 import PlayoffManager from './PlayoffManager';
+import TournamentHeader from './shared/TournamentHeader';
+import PlayoffAlert from './shared/PlayoffAlert';
+import WinnerBanner from './shared/WinnerBanner';
+import MyScorecardsSection from './shared/MyScorecardsSection';
+import TeamsSection from './shared/TeamsSection';
+import TeamEditorModal from './shared/TeamEditorModal';
 import './TournamentDetail.css';
 
 function TournamentDetail() {
@@ -62,11 +65,6 @@ function TournamentDetail() {
 
   useEffect(() => {
     const unsubTournament = subscribeToTournament(tournamentId, async (tournamentData) => {
-      console.log('Tournament loaded:', {
-        hasTeams: tournamentData.hasTeams,
-        teams: tournamentData.teams?.length || 0,
-        teamNames: tournamentData.teams?.map(t => t.name) || []
-      });
       setTournament(tournamentData);
 
       // Load series info if tournament has a series
@@ -251,7 +249,6 @@ function TournamentDetail() {
       });
       setShowTeamEditor(false);
     } catch (error) {
-      console.error('Error saving teams:', error);
       alert('Failed to save teams. Please try again.');
     }
   };
@@ -276,7 +273,6 @@ function TournamentDetail() {
   };
 
   const updateRoundCourse = (round) => {
-    console.log('updateRoundCourse called with round:', round);
     setConfiguringRound(round);
     setShowCourseConfig(true);
   };
@@ -793,7 +789,6 @@ function TournamentDetail() {
       setEditingRoundId(null);
       setEditingRoundData(null);
     } catch (error) {
-      console.error('Error updating round:', error);
       showNotification('Failed to update round. Please try again.', 'error');
     } finally {
       setRoundOperationLoading(false);
@@ -810,263 +805,48 @@ function TournamentDetail() {
     );
   }
 
-  const statusBadge = getStatusBadge(tournament.status);
-
   return (
     <div className="tournament-detail">
       <div className="detail-container">
         {/* Header */}
-        <div className="card detail-header">
-          <button onClick={() => navigate('/tournaments')} className="button secondary small">
-            <ArrowLeftIcon className="icon" />
-            Back to Tournaments
-          </button>
-
-          <div className="tournament-title-section">
-            <div className="title-row">
-              <h1>{tournament.name}</h1>
-              <span className={`status-badge ${statusBadge.className}`}>
-                {statusBadge.label}
-              </span>
-            </div>
-            {tournament.edition && (
-              <div className="tournament-edition">{tournament.edition}</div>
-            )}
-            {series && (
-              <div className="tournament-series">Part of {series.name} Series</div>
-            )}
-
-            {/* Inline Info Stats */}
-            <div className="header-stats">
-              <div className="header-stat">
-                <CalendarIcon className="stat-icon" />
-                <span>
-                  {new Date(tournament.startDate).toLocaleDateString()}
-                  {tournament.startDate !== tournament.endDate &&
-                    ` - ${new Date(tournament.endDate).toLocaleDateString()}`
-                  }
-                </span>
-              </div>
-              <div className="header-stat">
-                <TrophyIcon className="stat-icon" />
-                <span>{(tournament.hasTeams || (tournament.teams && tournament.teams.length > 0)) ? 'Team Tournament' : 'Individual Tournament'}</span>
-              </div>
-              <div className="header-stat">
-                <UserGroupIcon className="stat-icon" />
-                <span>{tournament.players.length} Players</span>
-              </div>
-              <div className="header-stat">
-                <CalendarIcon className="stat-icon" />
-                <span>{tournament.rounds?.length || 0} Rounds</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="header-actions">
-            {tournament.status === 'in_progress' && (
-              <button onClick={handleCompleteTournament} className="button primary">
-                <CheckCircleIcon className="icon" />
-                Complete Tournament
-              </button>
-            )}
-            <button onClick={handleOpenEditModal} className="button secondary">
-              <PencilIcon className="icon" />
-              Edit Details
-            </button>
-          </div>
-        </div>
+        <TournamentHeader
+          tournament={tournament}
+          series={series}
+          onBack={() => navigate('/tournaments')}
+          onCompleteTournament={handleCompleteTournament}
+          onOpenEditModal={handleOpenEditModal}
+        />
 
         {/* Playoff Alert Banner */}
-        {tournament.rounds?.some(round => isStablefordRound(round)) && tournament.status === 'in_progress' && detectPlayoff() && !tournament.winner && (
-          <div className="card playoff-alert">
-            <TrophyIcon className="playoff-icon" />
-            <div className="playoff-content">
-              <h3>Playoff Required!</h3>
-              <p>
-                {detectPlayoff().tiedPlayers.length} players are tied with {detectPlayoff().topScore} points.
-                A playoff is needed to determine the winner.
-              </p>
-            </div>
-            <button onClick={handleOpenPlayoffManager} className="button primary">
-              Resolve Playoff
-            </button>
-          </div>
+        {tournament.rounds?.some(round => isStablefordRound(round)) && tournament.status === 'in_progress' && !tournament.winner && (
+          <PlayoffAlert
+            playoffData={detectPlayoff()}
+            onResolvePlayoff={handleOpenPlayoffManager}
+          />
         )}
 
         {/* Tournament Winner Banner */}
-        {tournament.winner && (
-          <div className="card winner-banner">
-            <TrophyIcon className="winner-trophy-icon" />
-            <div className="winner-content">
-              <div className="winner-label">Tournament Winner</div>
-              <div className="winner-name">{tournament.winner}</div>
-              {tournament.winnerDetails?.method && (
-                <div className="winner-method">Resolved by: {tournament.winnerDetails.method}</div>
-              )}
-            </div>
-          </div>
-        )}
+        <WinnerBanner
+          winner={tournament.winner}
+          winnerDetails={tournament.winnerDetails}
+        />
 
         {/* My Scorecards - Only for players */}
-        {currentPlayer && !isAdmin && (() => {
-          const myScorecards = getMyAllScorecards();
-          const activeScorecard = myScorecards.find(sc => sc.scorecard.status === 'in_progress');
-
-          if (myScorecards.length === 0) return null;
-
-          return (
-            <div className="card my-scorecards-section">
-              <h2>My Scorecards</h2>
-
-              {/* Active Scorecard (Priority) */}
-              {activeScorecard && (
-                <div
-                  className="quick-action-card active-scorecard"
-                  onClick={() => navigateToScorecard(activeScorecard)}
-                >
-                  <div className="action-badge">Active</div>
-                  <div className="action-icon">⛳</div>
-                  <div className="action-content">
-                    <div className="action-title">
-                      {activeScorecard.round.name}
-                    </div>
-                    <div className="action-subtitle">
-                      {activeScorecard.type === 'team'
-                        ? `${activeScorecard.team.name} • ${getHolesCompleted(activeScorecard.scorecard)}/18`
-                        : `${getHolesCompleted(activeScorecard.scorecard)}/18 holes`
-                      }
-                    </div>
-                    {activeScorecard.type === 'match' && activeScorecard.scorecard.result && (
-                      <div className="action-meta">
-                        {activeScorecard.scorecard.result}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* All Scorecards List */}
-              <div className="my-scorecards-list">
-                {myScorecards
-                  .filter(sc => sc !== activeScorecard) // Don't duplicate active
-                  .map((scorecardData, index) => {
-                    const { round, scorecard, type, team } = scorecardData;
-                    const isCompleted = scorecard.status === 'completed';
-                    // Create unique key combining round id and team/player info
-                    const uniqueKey = type === 'team'
-                      ? `${round.id}-${team?.id}-team`
-                      : `${round.id}-individual`;
-
-                    return (
-                      <div
-                        key={uniqueKey}
-                        className={`scorecard-item ${isCompleted ? 'completed' : ''}`}
-                        onClick={() => navigateToScorecard(scorecardData)}
-                      >
-                        <div className="scorecard-item-header">
-                          <span className="round-name">{round.name}</span>
-                          <span className={`status-badge status-badge-${scorecard.status}`}>
-                            {isCompleted ? '✓' : `${getHolesCompleted(scorecard)}/18`}
-                          </span>
-                        </div>
-
-                        <div className="scorecard-item-details">
-                          {type === 'team' && (
-                            <>
-                              <span className="team-indicator">
-                                <span
-                                  className="team-dot"
-                                  style={{ backgroundColor: team.color }}
-                                />
-                                {team.name}
-                              </span>
-                              <span className="format-badge">{round.format.replace(/_/g, ' ')}</span>
-                            </>
-                          )}
-
-                          {type === 'individual' && (
-                            <>
-                              <span className="individual-indicator">Individual</span>
-                              <span className="format-badge">{round.format.replace(/_/g, ' ')}</span>
-                            </>
-                          )}
-
-                          {type === 'match' && (
-                            <>
-                              <span className="match-indicator">Match Play</span>
-                              {scorecard.result && (
-                                <span className="match-result">{scorecard.result}</span>
-                              )}
-                            </>
-                          )}
-                        </div>
-
-                        {isCompleted && scorecard.totalNet && (
-                          <div className="scorecard-item-score">
-                            Net: {scorecard.totalNet}
-                            {scorecard.totalPoints && ` • ${scorecard.totalPoints} pts`}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-          );
-        })()}
+        {currentPlayer && !isAdmin && (
+          <MyScorecardsSection
+            scorecards={getMyAllScorecards()}
+            onNavigateToScorecard={navigateToScorecard}
+            getHolesCompleted={getHolesCompleted}
+          />
+        )}
 
         {/* Teams Section (for team formats only) */}
         {isTeamFormat() && (
-          <div className="card teams-section">
-            <div className="section-header">
-              <div>
-                <h2>Teams</h2>
-                <p className="section-subtitle">Manage team configuration and player assignments</p>
-              </div>
-              <button onClick={() => setShowTeamEditor(true)} className="button secondary small">
-                <PencilIcon className="icon" />
-                Edit Teams
-              </button>
-            </div>
-
-            {tournament.teams && tournament.teams.length > 0 ? (
-              <div className="teams-grid">
-                {tournament.teams.map((team) => {
-                  const teamPlayers = players.filter(p => team.players?.includes(p.id));
-                  return (
-                    <div key={team.id} className="team-card">
-                      <div className="team-card-header">
-                        <div className="team-info">
-                          <span className="team-color-dot" style={{ backgroundColor: team.color }}></span>
-                          <h3>{team.name}</h3>
-                        </div>
-                        <span className="team-count">{teamPlayers.length} player{teamPlayers.length !== 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="team-players-list">
-                        {teamPlayers.map(player => (
-                          <div key={player.id} className="team-player">
-                            <span className="player-name">{player.name}</span>
-                            <span className="player-handicap">HCP {player.handicap?.toFixed(1)}</span>
-                          </div>
-                        ))}
-                        {teamPlayers.length === 0 && (
-                          <div className="empty-team-message">No players assigned</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="empty-state">
-                <p>No teams configured</p>
-                <button onClick={() => setShowTeamEditor(true)} className="button primary">
-                  <UserGroupIcon className="icon" />
-                  Setup Teams
-                </button>
-              </div>
-            )}
-          </div>
+          <TeamsSection
+            teams={tournament.teams}
+            players={players}
+            onEditTeams={() => setShowTeamEditor(true)}
+          />
         )}
 
         {/* Rounds Section */}
@@ -2005,150 +1785,6 @@ function TournamentDetail() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-// Team Editor Modal Component
-function TeamEditorModal({ teams, players, tournamentPlayers, onSave, onClose }) {
-  const [editingTeams, setEditingTeams] = useState(teams.length > 0 ? teams : [
-    { id: 'team1', name: 'Team 1', color: '#DC2626', players: [] },
-    { id: 'team2', name: 'Team 2', color: '#2563EB', players: [] }
-  ]);
-
-  const handleTeamNameChange = (teamId, newName) => {
-    setEditingTeams(prev => prev.map(t => t.id === teamId ? { ...t, name: newName } : t));
-  };
-
-  const handleTeamColorChange = (teamId, newColor) => {
-    setEditingTeams(prev => prev.map(t => t.id === teamId ? { ...t, color: newColor } : t));
-  };
-
-  const handleAddPlayerToTeam = (teamId, playerId) => {
-    setEditingTeams(prev => prev.map(t => {
-      if (t.id === teamId && !t.players.includes(playerId)) {
-        return { ...t, players: [...t.players, playerId] };
-      }
-      // Remove from other teams
-      return { ...t, players: t.players.filter(p => p !== playerId) };
-    }));
-  };
-
-  const handleRemovePlayerFromTeam = (teamId, playerId) => {
-    setEditingTeams(prev => prev.map(t =>
-      t.id === teamId ? { ...t, players: t.players.filter(p => p !== playerId) } : t
-    ));
-  };
-
-  const tournamentPlayersList = players.filter(p => tournamentPlayers.includes(p.id));
-  const allAssignedPlayers = editingTeams.flatMap(t => t.players);
-  const unassignedPlayers = tournamentPlayersList.filter(p => !allAssignedPlayers.includes(p.id));
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-large" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Edit Teams</h2>
-          <button onClick={onClose} className="close-button">×</button>
-        </div>
-
-        <div className="modal-body">
-          <div className="teams-setup">
-            {editingTeams.map((team, teamIndex) => {
-              const teamPlayers = players.filter(p => team.players.includes(p.id));
-
-              return (
-                <div key={team.id} className="team-setup-card card">
-                  <div className="team-header">
-                    <div className="team-info">
-                      <input
-                        type="text"
-                        value={team.name}
-                        onChange={(e) => handleTeamNameChange(team.id, e.target.value)}
-                        className="team-name-input"
-                        placeholder="Team Name"
-                      />
-                      <div className="team-color-picker">
-                        <label>Color:</label>
-                        <input
-                          type="color"
-                          value={team.color}
-                          onChange={(e) => handleTeamColorChange(team.id, e.target.value)}
-                          className="color-input"
-                        />
-                        <span className="color-preview" style={{ backgroundColor: team.color }}></span>
-                      </div>
-                    </div>
-                    <div className="team-count">
-                      {teamPlayers.length} player{teamPlayers.length !== 1 ? 's' : ''}
-                    </div>
-                  </div>
-
-                  <div className="team-players">
-                    {teamPlayers.length > 0 ? (
-                      <div className="assigned-players">
-                        {teamPlayers.map(player => (
-                          <div key={player.id} className="team-player-item">
-                            <div className="player-details">
-                              <span className="player-name">{player.name}</span>
-                              <span className="player-handicap">HCP {player.handicap?.toFixed(1)}</span>
-                            </div>
-                            <button
-                              onClick={() => handleRemovePlayerFromTeam(team.id, player.id)}
-                              className="button small danger"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="empty-team">No players assigned</div>
-                    )}
-                  </div>
-
-                  {teamIndex === editingTeams.length - 1 && unassignedPlayers.length > 0 && (
-                    <div className="unassigned-section">
-                      <h4>Unassigned Players</h4>
-                      <div className="unassigned-players">
-                        {unassignedPlayers.map(player => (
-                          <div key={player.id} className="unassigned-player-item">
-                            <div className="player-details">
-                              <span className="player-name">{player.name}</span>
-                              <span className="player-handicap">HCP {player.handicap?.toFixed(1)}</span>
-                            </div>
-                            <div className="assign-buttons">
-                              {editingTeams.map(t => (
-                                <button
-                                  key={t.id}
-                                  onClick={() => handleAddPlayerToTeam(t.id, player.id)}
-                                  className="button small secondary"
-                                  style={{ borderColor: t.color }}
-                                >
-                                  Add to {t.name}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="modal-footer">
-          <button onClick={onClose} className="button secondary">
-            Cancel
-          </button>
-          <button onClick={() => onSave(editingTeams)} className="button primary">
-            Save Teams
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { CameraIcon, PhotoIcon, VideoCameraIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import {
   compressPhoto,
@@ -175,7 +176,6 @@ function MediaUploader({
       }, 1000);
 
     } catch (err) {
-      console.error('Error starting video recording:', err);
       setError('Unable to access camera. Please check permissions.');
     }
   };
@@ -263,7 +263,6 @@ function MediaUploader({
       }, 500);
 
     } catch (err) {
-      console.error('Upload error:', err);
       setError(err.message || 'Upload failed. Please try again.');
       setUploading(false);
     }
@@ -455,5 +454,26 @@ function MediaUploader({
     </div>
   );
 }
+
+MediaUploader.propTypes = {
+  /** Tournament ID */
+  tournamentId: PropTypes.string.isRequired,
+  /** Round ID (optional) */
+  roundId: PropTypes.string,
+  /** Current hole number (optional) */
+  holeNumber: PropTypes.number,
+  /** Player ID (optional) */
+  playerId: PropTypes.string,
+  /** Array of player IDs (optional, for team photos) */
+  playerIds: PropTypes.arrayOf(PropTypes.string),
+  /** Match ID (optional) */
+  matchId: PropTypes.string,
+  /** Media category */
+  category: PropTypes.string,
+  /** Callback when upload completes */
+  onUploadComplete: PropTypes.func,
+  /** Callback when uploader is closed */
+  onClose: PropTypes.func
+};
 
 export default MediaUploader;

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import './QuickScoreButtons.css';
 
 /**
@@ -39,5 +40,20 @@ function QuickScoreButtons({
     </div>
   );
 }
+
+QuickScoreButtons.propTypes = {
+  /** Callback when score is selected */
+  onSelect: PropTypes.func.isRequired,
+  /** Currently selected score */
+  selectedScore: PropTypes.number,
+  /** Minimum score to display */
+  min: PropTypes.number,
+  /** Maximum score to display */
+  max: PropTypes.number,
+  /** Optional title for the section */
+  title: PropTypes.string,
+  /** Additional CSS class names */
+  className: PropTypes.string
+};
 
 export default QuickScoreButtons;

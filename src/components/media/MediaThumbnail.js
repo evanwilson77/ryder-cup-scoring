@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { PlayIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { formatDuration } from '../../utils/mediaUtils';
 import './MediaThumbnail.css';
@@ -84,5 +85,25 @@ function MediaThumbnail({ media, onClick, onDelete, showDelete = false }) {
     </div>
   );
 }
+
+MediaThumbnail.propTypes = {
+  /** Media object with type, downloadUrl, caption, etc */
+  media: PropTypes.shape({
+    id: PropTypes.string,
+    type: PropTypes.oneOf(['photo', 'video']).isRequired,
+    downloadUrl: PropTypes.string.isRequired,
+    thumbnailUrl: PropTypes.string,
+    caption: PropTypes.string,
+    holeNumber: PropTypes.number,
+    category: PropTypes.string,
+    duration: PropTypes.number
+  }).isRequired,
+  /** Callback when thumbnail is clicked */
+  onClick: PropTypes.func,
+  /** Callback when delete button is clicked */
+  onDelete: PropTypes.func,
+  /** Whether to show delete button */
+  showDelete: PropTypes.bool
+};
 
 export default MediaThumbnail;

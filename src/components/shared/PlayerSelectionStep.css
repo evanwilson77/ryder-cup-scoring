@@ -1,0 +1,25 @@
+/*
+ * PlayerSelectionStep styles
+ * Note: Most styles are inherited from parent TournamentCreation.css
+ * This file is for component-specific overrides if needed
+ */
+
+.form-step {
+  /* Styles defined in TournamentCreation.css */
+}
+
+.player-selection-controls {
+  /* Styles defined in TournamentCreation.css */
+}
+
+.players-grid {
+  /* Styles defined in TournamentCreation.css */
+}
+
+.player-card {
+  /* Styles defined in TournamentCreation.css */
+}
+
+.empty-state {
+  /* Styles defined in TournamentCreation.css */
+}

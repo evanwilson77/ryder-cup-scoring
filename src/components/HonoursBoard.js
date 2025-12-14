@@ -68,8 +68,6 @@ function HonoursBoard() {
         ...doc.data()
       }));
 
-      console.log(`Loaded ${tournaments.length} tournaments and ${historicEntries.length} historic entries for series ${seriesId}`);
-
       // Extract winners and statistics
       const winners = [];
       const playerStats = new Map();

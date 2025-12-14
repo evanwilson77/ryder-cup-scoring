@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { PhotoIcon, FunnelIcon, PlusIcon } from '@heroicons/react/24/outline';
 import MediaThumbnail from './MediaThumbnail';
 import MediaViewer from './MediaViewer';
@@ -223,5 +224,16 @@ function MediaGallery({ tournamentId, roundId = null, showUploadButton = true, c
     </div>
   );
 }
+
+MediaGallery.propTypes = {
+  /** Tournament ID */
+  tournamentId: PropTypes.string.isRequired,
+  /** Round ID (optional, filters to specific round) */
+  roundId: PropTypes.string,
+  /** Whether to show upload button */
+  showUploadButton: PropTypes.bool,
+  /** Category filter (optional) */
+  category: PropTypes.string
+};
 
 export default MediaGallery;

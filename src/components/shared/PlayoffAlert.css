@@ -1,0 +1,17 @@
+/*
+ * PlayoffAlert styles
+ * Note: Most styles are inherited from parent TournamentDetail.css
+ * This file is for component-specific overrides if needed
+ */
+
+.playoff-alert {
+  /* Styles defined in TournamentDetail.css */
+}
+
+.playoff-icon {
+  /* Styles defined in TournamentDetail.css */
+}
+
+.playoff-content {
+  /* Styles defined in TournamentDetail.css */
+}

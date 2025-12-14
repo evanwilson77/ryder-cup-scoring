@@ -1,0 +1,17 @@
+/*
+ * ScoringHeader styles
+ * Note: Most styles are inherited from parent Scoring.css
+ * This file is for component-specific overrides if needed
+ */
+
+.scoring-header {
+  /* Styles defined in Scoring.css */
+}
+
+.header-leaderboard {
+  /* Styles defined in Scoring.css */
+}
+
+.mini-score-display {
+  /* Styles defined in Scoring.css */
+}

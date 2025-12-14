@@ -1,0 +1,17 @@
+/*
+ * CreationProgressSteps styles
+ * Note: Most styles are inherited from parent TournamentCreation.css
+ * This file is for component-specific overrides if needed
+ */
+
+.progress-steps {
+  /* Styles defined in TournamentCreation.css */
+}
+
+.step-item {
+  /* Styles defined in TournamentCreation.css */
+}
+
+.step-indicator {
+  /* Styles defined in TournamentCreation.css */
+}

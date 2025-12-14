@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import './LeaderboardSummary.css';
 
 /**
@@ -140,5 +141,31 @@ function LeaderboardSummary({
     </div>
   );
 }
+
+LeaderboardSummary.propTypes = {
+  /** Array of scorecard objects with totals */
+  scorecards: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.string,
+    playerId: PropTypes.string,
+    totalGross: PropTypes.number,
+    totalNet: PropTypes.number,
+    totalStableford: PropTypes.number,
+    totalPoints: PropTypes.number,
+    holes: PropTypes.array
+  })).isRequired,
+  /** Array of player objects */
+  players: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.string,
+    name: PropTypes.string
+  })).isRequired,
+  /** ID of the current player's scorecard to highlight */
+  currentScorecardId: PropTypes.string,
+  /** Scoring format: 'stableford', 'stroke', 'bestball' */
+  format: PropTypes.oneOf(['stableford', 'stroke', 'bestball']),
+  /** Maximum number of players to show before truncating */
+  maxDisplay: PropTypes.number,
+  /** Additional CSS class names */
+  className: PropTypes.string
+};
 
 export default LeaderboardSummary;

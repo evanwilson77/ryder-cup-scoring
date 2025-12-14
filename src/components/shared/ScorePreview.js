@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import './ScorePreview.css';
 
 /**
@@ -74,5 +75,20 @@ function ScorePreview({
     </div>
   );
 }
+
+ScorePreview.propTypes = {
+  /** Gross score */
+  grossScore: PropTypes.number,
+  /** Net score (after handicap) */
+  netScore: PropTypes.number,
+  /** Stableford points (optional) */
+  points: PropTypes.number,
+  /** Hole par (optional, for vs par display) */
+  par: PropTypes.number,
+  /** Scoring format: 'stroke' or 'stableford' */
+  format: PropTypes.oneOf(['stroke', 'stableford']),
+  /** Additional CSS class names */
+  className: PropTypes.string
+};
 
 export default ScorePreview;

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import './ScoreCard.css';
 
 /**
@@ -395,5 +396,28 @@ function ScoreCard({
   // individual_stroke or stableford
   return renderIndividualStroke();
 }
+
+ScoreCard.propTypes = {
+  /** Array of hole data with par, SI, distance */
+  holes: PropTypes.arrayOf(PropTypes.shape({
+    number: PropTypes.number,
+    par: PropTypes.number,
+    si: PropTypes.number,
+    distance: PropTypes.number
+  })),
+  /** Array of scoring data for each player/team */
+  scoringData: PropTypes.arrayOf(PropTypes.shape({
+    playerName: PropTypes.string,
+    scores: PropTypes.array
+  })),
+  /** Format of the round (individual_stroke, stableford, match_play, etc.) */
+  format: PropTypes.oneOf(['individual_stroke', 'stableford', 'match_play', 'singles', 'fourball', 'foursomes']),
+  /** Current hole being played (for highlighting) */
+  currentHole: PropTypes.number,
+  /** Compact display mode */
+  compact: PropTypes.bool,
+  /** Additional CSS class names */
+  className: PropTypes.string
+};
 
 export default ScoreCard;

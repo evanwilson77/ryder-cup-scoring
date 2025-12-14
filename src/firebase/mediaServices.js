@@ -102,7 +102,6 @@ export async function uploadPhoto(file, metadata) {
 
     await addDoc(collection(db, COLLECTIONS.MEDIA), mediaDoc);
 
-    console.log('Photo uploaded successfully:', mediaId);
     return mediaId;
   } catch (error) {
     console.error('Error uploading photo:', error);
@@ -202,7 +201,6 @@ export async function uploadVideo(file, metadata, thumbnailBlob = null) {
 
     await addDoc(collection(db, COLLECTIONS.MEDIA), mediaDoc);
 
-    console.log('Video uploaded successfully:', mediaId);
     return mediaId;
   } catch (error) {
     console.error('Error uploading video:', error);
@@ -327,8 +325,6 @@ export async function deleteMedia(docId, storagePath, thumbnailPath = null) {
     // Delete from Firestore
     const mediaRef = doc(db, COLLECTIONS.MEDIA, docId);
     await deleteDoc(mediaRef);
-
-    console.log('Media deleted successfully:', docId);
   } catch (error) {
     console.error('Error deleting media:', error);
     throw error;

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import './AutoSaveIndicator.css';
 
 /**
@@ -20,5 +21,14 @@ function AutoSaveIndicator({ isSaving, text = 'Saving...', className = '' }) {
     </span>
   );
 }
+
+AutoSaveIndicator.propTypes = {
+  /** Whether data is currently being saved */
+  isSaving: PropTypes.bool.isRequired,
+  /** Custom text to display when saving */
+  text: PropTypes.string,
+  /** Additional CSS class names */
+  className: PropTypes.string
+};
 
 export default AutoSaveIndicator;

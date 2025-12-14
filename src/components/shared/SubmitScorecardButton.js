@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { updateTournament } from '../../firebase/tournamentServices';
 import './SubmitScorecardButton.css';
 
@@ -77,7 +78,6 @@ function SubmitScorecardButton({
         onComplete();
       }
     } catch (error) {
-      console.error('Error submitting scorecard:', error);
       alert('Failed to submit scorecard. Please try again.');
     } finally {
       setSubmitting(false);
@@ -99,5 +99,23 @@ function SubmitScorecardButton({
     </div>
   );
 }
+
+SubmitScorecardButton.propTypes = {
+  /** Tournament object */
+  tournament: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    rounds: PropTypes.array.isRequired
+  }).isRequired,
+  /** Round ID */
+  roundId: PropTypes.string.isRequired,
+  /** Scorecard ID to complete */
+  scorecardId: PropTypes.string.isRequired,
+  /** Callback after successful completion */
+  onComplete: PropTypes.func,
+  /** Whether button is disabled */
+  disabled: PropTypes.bool,
+  /** Additional CSS class names */
+  className: PropTypes.string
+};
 
 export default SubmitScorecardButton;

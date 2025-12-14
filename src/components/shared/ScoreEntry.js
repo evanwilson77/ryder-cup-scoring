@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import './ScoreEntry.css';
 
 /**
@@ -56,5 +57,26 @@ function ScoreEntry({
     </div>
   );
 }
+
+ScoreEntry.propTypes = {
+  /** Current score value */
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  /** Callback when score changes via input */
+  onChange: PropTypes.func.isRequired,
+  /** Callback when + button clicked */
+  onIncrement: PropTypes.func.isRequired,
+  /** Callback when - button clicked */
+  onDecrement: PropTypes.func.isRequired,
+  /** Label text to display above the score entry */
+  label: PropTypes.string,
+  /** Minimum allowed score value */
+  min: PropTypes.number,
+  /** Maximum allowed score value */
+  max: PropTypes.number,
+  /** Whether the score entry is disabled */
+  disabled: PropTypes.bool,
+  /** Additional CSS class names */
+  className: PropTypes.string
+};
 
 export default ScoreEntry;

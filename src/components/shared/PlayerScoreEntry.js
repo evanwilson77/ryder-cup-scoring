@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import ScoreEntry from './ScoreEntry';
 import './PlayerScoreEntry.css';
 
@@ -66,5 +67,33 @@ function PlayerScoreEntry({
     </div>
   );
 }
+
+PlayerScoreEntry.propTypes = {
+  /** Player object with name and handicap */
+  player: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    handicap: PropTypes.number
+  }).isRequired,
+  /** Current gross score */
+  grossScore: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  /** Strokes received on this hole */
+  strokesReceived: PropTypes.number,
+  /** Calculated net score */
+  netScore: PropTypes.number,
+  /** Stableford points (for stableford format) */
+  points: PropTypes.number,
+  /** Callback when score changes */
+  onChange: PropTypes.func.isRequired,
+  /** Callback for increment button */
+  onIncrement: PropTypes.func.isRequired,
+  /** Callback for decrement button */
+  onDecrement: PropTypes.func.isRequired,
+  /** Whether score entry is disabled */
+  disabled: PropTypes.bool,
+  /** Scoring format: 'stroke' or 'stableford' */
+  format: PropTypes.oneOf(['stroke', 'stableford']),
+  /** Additional CSS class names */
+  className: PropTypes.string
+};
 
 export default PlayerScoreEntry;
