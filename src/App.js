@@ -31,6 +31,7 @@ import Help from './components/Help';
 import PlayerMigration from './components/PlayerMigration';
 import AnomalyLogs from './components/AnomalyLogs';
 import PlayerStatistics from './components/PlayerStatistics';
+import TournamentAnalytics from './components/TournamentAnalytics';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import PullToRefresh from './components/PullToRefresh';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -210,6 +211,7 @@ function AppContent() {
           <Route path="/tournaments" element={<ProtectedRoute><TournamentDashboard /></ProtectedRoute>} />
           <Route path="/tournaments/create" element={<ProtectedRoute><TournamentCreation /></ProtectedRoute>} />
           <Route path="/tournaments/:tournamentId" element={<ProtectedRoute><TournamentDetail /></ProtectedRoute>} />
+          <Route path="/tournaments/:tournamentId/analytics" element={<ProtectedRoute><TournamentAnalytics /></ProtectedRoute>} />
           <Route path="/series-management" element={<ProtectedRoute><SeriesManagement /></ProtectedRoute>} />
           <Route path="/series/:seriesId/dashboard" element={<ProtectedRoute><SeriesDashboard /></ProtectedRoute>} />
           <Route path="/series/:seriesId" element={<ProtectedRoute><SeriesLeaderboard /></ProtectedRoute>} />

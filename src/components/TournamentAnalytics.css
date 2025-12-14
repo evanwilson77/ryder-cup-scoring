@@ -1,0 +1,345 @@
+.tournament-analytics {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1rem;
+}
+
+/* Header */
+.analytics-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.analytics-header .back-button {
+  padding: 0.5rem;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.analytics-header .back-button:hover {
+  background: #e5e7eb;
+}
+
+.analytics-header .back-button .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #374151;
+}
+
+.analytics-header .tournament-info {
+  flex: 1;
+}
+
+.analytics-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 0.5rem 0;
+}
+
+.edition-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.tournament-dates {
+  font-size: 0.875rem;
+  color: #718096;
+  margin: 0.5rem 0 0 0;
+}
+
+/* Overview Stats */
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 0.75rem;
+  color: white;
+}
+
+.stat-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #718096;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+/* Score Distribution */
+.score-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.score-dist-item {
+  position: relative;
+}
+
+.score-dist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.score-dist-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.score-dist-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.score-dist-bar-container {
+  height: 1rem;
+  background: #f7fafc;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.score-dist-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 0.5rem;
+  transition: width 0.5s ease;
+}
+
+.score-dist-item.eagles .score-dist-bar {
+  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+}
+
+.score-dist-item.birdies .score-dist-bar {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+
+.score-dist-item.pars .score-dist-bar {
+  background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.score-dist-item.bogeys .score-dist-bar {
+  background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
+}
+
+.score-dist-item.double-plus .score-dist-bar {
+  background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+}
+
+/* Hole Difficulty */
+.hole-difficulty-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.hole-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hole-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 0.5rem;
+  border-left: 4px solid #cbd5e0;
+  transition: all 0.2s;
+}
+
+.hole-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.hole-item.hard {
+  border-left-color: #ef4444;
+}
+
+.hole-item.easy {
+  border-left-color: #10b981;
+}
+
+.hole-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #667eea;
+  min-width: 3rem;
+  text-align: center;
+}
+
+.hole-stats {
+  flex: 1;
+  display: flex;
+  gap: 1.5rem;
+}
+
+.hole-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hole-stat .stat-label {
+  font-size: 0.75rem;
+  color: #718096;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hole-stat .stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.difficulty-value {
+  color: #ef4444;
+}
+
+.hole-item.easy .difficulty-value {
+  color: #10b981;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.empty-state .empty-icon {
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1rem;
+  color: #cbd5e0;
+}
+
+.empty-state h2,
+.empty-state h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 0.5rem 0;
+}
+
+.empty-state p {
+  color: #718096;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tournament-analytics {
+    padding: 0.5rem;
+  }
+
+  .analytics-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .analytics-header .back-button {
+    align-self: flex-start;
+  }
+
+  .analytics-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .stats-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .hole-difficulty-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hole-stats {
+    gap: 1rem;
+  }
+}
