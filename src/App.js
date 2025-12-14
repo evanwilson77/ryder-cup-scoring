@@ -30,6 +30,7 @@ import HonoursBoardAdmin from './components/HonoursBoardAdmin';
 import Help from './components/Help';
 import PlayerMigration from './components/PlayerMigration';
 import AnomalyLogs from './components/AnomalyLogs';
+import PlayerStatistics from './components/PlayerStatistics';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import PullToRefresh from './components/PullToRefresh';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -203,6 +204,7 @@ function AppContent() {
           <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
           <Route path="/courses" element={<ProtectedRoute><CourseLibrary /></ProtectedRoute>} />
           <Route path="/players" element={<ProtectedRoute><PlayerManagement /></ProtectedRoute>} />
+          <Route path="/players/:playerId/statistics" element={<ProtectedRoute><PlayerStatistics /></ProtectedRoute>} />
           <Route path="/admin/migrate-players" element={<ProtectedRoute><PlayerMigration /></ProtectedRoute>} />
           <Route path="/admin/anomaly-logs" element={<ProtectedRoute><AnomalyLogs /></ProtectedRoute>} />
           <Route path="/tournaments" element={<ProtectedRoute><TournamentDashboard /></ProtectedRoute>} />
