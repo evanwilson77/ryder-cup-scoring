@@ -29,6 +29,7 @@ function ShambleScoring() {
   const [driveSelections, setDriveSelections] = useState([]);
   const [driveTracker, setDriveTracker] = useState(null);
   const [scoringFormat, setScoringFormat] = useState('stroke'); // 'stroke' or 'stableford'
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   // Custom hooks
   const currentHoleData = round?.courseData?.holes?.[currentHole];
@@ -166,19 +167,23 @@ function ShambleScoring() {
       setPlayerScores(existingScorecard.playerScores);
       setDriveSelections(existingScorecard.driveSelections || []);
 
-      // Find first unscored hole
-      let firstUnscoredHole = 0;
-      for (let i = 0; i < 18; i++) {
-        const hasScore = Object.values(existingScorecard.playerScores).some(playerHoles => {
-          const hole = playerHoles.find(h => h.holeNumber === i + 1);
-          return hole && hole.grossScore !== null && hole.grossScore !== undefined;
-        });
-        if (!hasScore) {
-          firstUnscoredHole = i;
-          break;
+      // Only auto-jump to first unscored hole on initial load, not after every autosave
+      if (!initialLoadDone) {
+        // Find first unscored hole
+        let firstUnscoredHole = 0;
+        for (let i = 0; i < 18; i++) {
+          const hasScore = Object.values(existingScorecard.playerScores).some(playerHoles => {
+            const hole = playerHoles.find(h => h.holeNumber === i + 1);
+            return hole && hole.grossScore !== null && hole.grossScore !== undefined;
+          });
+          if (!hasScore) {
+            firstUnscoredHole = i;
+            break;
+          }
         }
+        setCurrentHole(firstUnscoredHole);
+        setInitialLoadDone(true);
       }
-      setCurrentHole(firstUnscoredHole);
     } else {
       // Initialize empty scores for each player
       const initialScores = {};
@@ -190,9 +195,12 @@ function ShambleScoring() {
       });
       setPlayerScores(initialScores);
       setDriveSelections(Array(18).fill(null));
-      setCurrentHole(0);
+      if (!initialLoadDone) {
+        setCurrentHole(0);
+        setInitialLoadDone(true);
+      }
     }
-  }, [tournament, round, teamId]);
+  }, [tournament, round, teamId, initialLoadDone]);
 
   // Subscribe to players
   useEffect(() => {

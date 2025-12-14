@@ -32,6 +32,7 @@ function ScrambleScoring() {
   const [driveSelections, setDriveSelections] = useState([]);
   const [driveTracker, setDriveTracker] = useState(null);
   const [teamHandicap, setTeamHandicap] = useState(0);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   // Custom hooks
   const currentHoleData = round?.courseData?.holes?.[currentHole];
@@ -154,17 +155,21 @@ function ScrambleScoring() {
       setScores(existingScorecard.holes || []);
       setDriveSelections(existingScorecard.driveSelections || []);
 
-      // Find first unscored hole
-      const holes = existingScorecard.holes || [];
-      let firstUnscoredHole = 0;
-      for (let i = 0; i < 18; i++) {
-        const hole = holes.find(h => h.holeNumber === i + 1);
-        if (!hole || hole.grossScore === null || hole.grossScore === undefined) {
-          firstUnscoredHole = i;
-          break;
+      // Only auto-jump to first unscored hole on initial load, not after every autosave
+      if (!initialLoadDone) {
+        // Find first unscored hole
+        const holes = existingScorecard.holes || [];
+        let firstUnscoredHole = 0;
+        for (let i = 0; i < 18; i++) {
+          const hole = holes.find(h => h.holeNumber === i + 1);
+          if (!hole || hole.grossScore === null || hole.grossScore === undefined) {
+            firstUnscoredHole = i;
+            break;
+          }
         }
+        setCurrentHole(firstUnscoredHole);
+        setInitialLoadDone(true);
       }
-      setCurrentHole(firstUnscoredHole);
     } else {
       // Initialize empty scores
       const initialScores = Array(18).fill(null).map((_, index) => ({
@@ -173,9 +178,12 @@ function ScrambleScoring() {
       }));
       setScores(initialScores);
       setDriveSelections(Array(18).fill(null));
-      setCurrentHole(0);
+      if (!initialLoadDone) {
+        setCurrentHole(0);
+        setInitialLoadDone(true);
+      }
     }
-  }, [tournament, round, teamId]);
+  }, [tournament, round, teamId, initialLoadDone]);
 
   // Subscribe to players
   useEffect(() => {
