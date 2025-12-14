@@ -1036,16 +1036,16 @@ function TournamentDetail() {
                               <div className="scorecard-scores">
                                 {scorecard.totalGross > 0 && (
                                   <>
-                                    <div className="score-item">
+                                    <div key="gross" className="score-item">
                                       <span className="score-label">Gross</span>
                                       <span className="score-value">{scorecard.totalGross}</span>
                                     </div>
-                                    <div className="score-item">
+                                    <div key="net" className="score-item">
                                       <span className="score-label">Net</span>
                                       <span className="score-value">{scorecard.totalNet}</span>
                                     </div>
                                     {isStablefordRound(selectedRound) && (
-                                      <div className="score-item">
+                                      <div key="points" className="score-item">
                                         <span className="score-label">Points</span>
                                         <span className="score-value stableford">{scorecard.totalPoints || 0}</span>
                                       </div>
@@ -1209,16 +1209,16 @@ function TournamentDetail() {
                               <div className="scorecard-scores">
                                 {teamScorecard.totalGross > 0 && (
                                   <>
-                                    <div className="score-item">
+                                    <div key="gross" className="score-item">
                                       <span className="score-label">Gross</span>
                                       <span className="score-value">{teamScorecard.totalGross}</span>
                                     </div>
-                                    <div className="score-item">
+                                    <div key="net" className="score-item">
                                       <span className="score-label">Net</span>
                                       <span className="score-value">{teamScorecard.totalNet}</span>
                                     </div>
                                     {selectedRound.format === 'team_stableford' && (
-                                      <div className="score-item">
+                                      <div key="points" className="score-item">
                                         <span className="score-label">Points</span>
                                         <span className="score-value stableford">{teamScorecard.totalPoints || 0}</span>
                                       </div>

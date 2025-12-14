@@ -30,7 +30,10 @@
       "Bash(tasklist:*)",
       "Bash(timeout /t 10)",
       "Bash(dir:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(cloc:*)",
+      "Bash(find:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []

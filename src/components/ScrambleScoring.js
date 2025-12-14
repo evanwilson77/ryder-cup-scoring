@@ -15,8 +15,7 @@ import {
   AutoSaveIndicator,
   HoleInfo,
   ScoreCard,
-  ScoreEntry,
-  SubmitScorecardButton
+  ScoreEntry
 } from './shared';
 import './ScrambleScoring.css';
 
@@ -636,10 +635,12 @@ function ScrambleScoring() {
         )}
 
         {/* Submit Button */}
-        <SubmitScorecardButton
-          onSubmit={handleSubmit}
-          buttonText="Submit Scramble Score"
-        />
+        <button
+          className="button primary large submit-button"
+          onClick={handleSubmit}
+        >
+          ✓ Submit Scramble Score
+        </button>
       </div>
     </div>
   );

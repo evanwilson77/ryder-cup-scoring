@@ -12,8 +12,7 @@ import {
   AutoSaveIndicator,
   HoleInfo,
   ScoreCard,
-  PlayerScoreEntry,
-  SubmitScorecardButton
+  PlayerScoreEntry
 } from './shared';
 import './ShambleScoring.css';
 
@@ -751,10 +750,12 @@ function ShambleScoring() {
         )}
 
         {/* Submit Button */}
-        <SubmitScorecardButton
-          onSubmit={handleSubmit}
-          buttonText="Submit Shamble Score"
-        />
+        <button
+          className="button primary large submit-button"
+          onClick={handleSubmit}
+        >
+          ✓ Submit Shamble Score
+        </button>
       </div>
     </div>
   );
