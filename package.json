@@ -15,7 +15,8 @@
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.3.8",
     "react-router-dom": "^6.20.1",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "react-swipeable": "^7.0.2"
   },
   "scripts": {
     "start": "react-scripts start",

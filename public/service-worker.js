@@ -1,11 +1,10 @@
 /* eslint-disable no-restricted-globals */
 
-const CACHE_NAME = 'ryder-cup-v1';
+const CACHE_NAME = 'ryder-cup-v2';
+const RUNTIME_CACHE = 'ryder-cup-runtime';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/static/css/main.css',
-  '/static/js/main.js',
   '/manifest.json'
 ];
 
@@ -24,51 +23,94 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Fetch from cache first, then network
+// Fetch strategy: Network First for API calls, Cache First for static assets
 self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
   // Ignore chrome-extension and other unsupported schemes
-  if (!event.request.url.startsWith('http')) {
+  if (!url.protocol.startsWith('http')) {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
+  // Network First for Firebase/API calls
+  if (url.hostname.includes('firebaseio.com') ||
+      url.hostname.includes('googleapis.com') ||
+      url.hostname.includes('firestore.googleapis.com')) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
 
-        // Clone the request
-        const fetchRequest = event.request.clone();
+  // Cache First for static assets (JS, CSS, images)
+  if (request.destination === 'script' ||
+      request.destination === 'style' ||
+      request.destination === 'image' ||
+      request.destination === 'font') {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
 
-        return fetch(fetchRequest).then((response) => {
-          // Check if valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
+  // Network First for navigation requests
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
 
-          // Clone the response
-          const responseToCache = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            })
-            .catch((error) => {
-              // Silently handle cache errors
-              console.debug('Cache put failed:', error.message);
-            });
-
-          return response;
-        });
-      })
-  );
+  // Default: try network first, fallback to cache
+  event.respondWith(networkFirst(request));
 });
+
+// Network First strategy
+async function networkFirst(request) {
+  try {
+    const networkResponse = await fetch(request);
+
+    // Save successful responses to runtime cache
+    if (networkResponse && networkResponse.status === 200) {
+      const cache = await caches.open(RUNTIME_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+
+    return networkResponse;
+  } catch (error) {
+    // Network failed, try cache
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    // Return offline page for navigation requests
+    if (request.mode === 'navigate') {
+      const cache = await caches.open(CACHE_NAME);
+      return cache.match('/index.html');
+    }
+
+    throw error;
+  }
+}
+
+// Cache First strategy
+async function cacheFirst(request) {
+  const cachedResponse = await caches.match(request);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse && networkResponse.status === 200) {
+      const cache = await caches.open(RUNTIME_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    throw error;
+  }
+}
 
 // Clean up old caches
 self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME];
+  const cacheWhitelist = [CACHE_NAME, RUNTIME_CACHE];
 
   event.waitUntil(
     caches.keys().then((cacheNames) => {
