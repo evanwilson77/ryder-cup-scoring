@@ -56,4 +56,4 @@ QuickScoreButtons.propTypes = {
   className: PropTypes.string
 };
 
-export default QuickScoreButtons;
+export default React.memo(QuickScoreButtons);

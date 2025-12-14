@@ -29,4 +29,4 @@ CreationHeader.propTypes = {
   onBack: PropTypes.func.isRequired
 };
 
-export default CreationHeader;
+export default React.memo(CreationHeader);

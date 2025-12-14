@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { subscribeToTournament } from '../firebase/tournamentServices';
 import { subscribeToPlayers } from '../firebase/services';
 import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline';
 import {
@@ -10,7 +9,7 @@ import {
   calculateTeamStrokesReceived,
   ScrambleDriveTracker
 } from '../utils/scrambleCalculations';
-import { useAutoSave, useScoreEntry } from '../hooks';
+import { useAutoSave, useScoreEntry, useTournamentRound } from '../hooks';
 import {
   AutoSaveIndicator,
   HoleInfo,
@@ -22,12 +21,10 @@ import './ScrambleScoring.css';
 function ScrambleScoring() {
   const { tournamentId, roundId, teamId } = useParams();
   const navigate = useNavigate();
-  const [tournament, setTournament] = useState(null);
-  const [round, setRound] = useState(null);
+  const { tournament, round, loading: tournamentLoading } = useTournamentRound(tournamentId, roundId);
   const [team, setTeam] = useState(null);
   const [players, setPlayers] = useState([]);
   const [teamPlayers, setTeamPlayers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [currentHole, setCurrentHole] = useState(0);
   const [scores, setScores] = useState([]);
   const [driveSelections, setDriveSelections] = useState([]);
@@ -140,58 +137,51 @@ function ScrambleScoring() {
 
   const { isSaving, save: triggerAutoSave } = useAutoSave(autoSaveScore, 1000);
 
+  // Load team and scorecard data when tournament changes
   useEffect(() => {
-    const unsubTournament = subscribeToTournament(tournamentId, (tournamentData) => {
-      setTournament(tournamentData);
+    if (!tournament || !round) return;
 
-      // Find the specific round
-      const foundRound = tournamentData.rounds?.find(r => r.id === roundId);
-      setRound(foundRound);
+    // Find the team
+    const foundTeam = tournament.teams?.find(t => t.id === teamId);
+    setTeam(foundTeam);
 
-      // Find the team
-      const foundTeam = tournamentData.teams?.find(t => t.id === teamId);
-      setTeam(foundTeam);
+    // Find existing scorecard or create new one
+    const existingScorecard = round.teamScorecards?.find(sc => sc.teamId === teamId);
+    if (existingScorecard) {
+      setScores(existingScorecard.holes || []);
+      setDriveSelections(existingScorecard.driveSelections || []);
 
-      // Find existing scorecard or create new one
-      const existingScorecard = foundRound?.teamScorecards?.find(sc => sc.teamId === teamId);
-      if (existingScorecard) {
-        setScores(existingScorecard.holes || []);
-        setDriveSelections(existingScorecard.driveSelections || []);
-
-        // Find first unscored hole
-        const holes = existingScorecard.holes || [];
-        let firstUnscoredHole = 0;
-        for (let i = 0; i < 18; i++) {
-          const hole = holes.find(h => h.holeNumber === i + 1);
-          if (!hole || hole.grossScore === null || hole.grossScore === undefined) {
-            firstUnscoredHole = i;
-            break;
-          }
+      // Find first unscored hole
+      const holes = existingScorecard.holes || [];
+      let firstUnscoredHole = 0;
+      for (let i = 0; i < 18; i++) {
+        const hole = holes.find(h => h.holeNumber === i + 1);
+        if (!hole || hole.grossScore === null || hole.grossScore === undefined) {
+          firstUnscoredHole = i;
+          break;
         }
-        setCurrentHole(firstUnscoredHole);
-      } else {
-        // Initialize empty scores
-        const initialScores = Array(18).fill(null).map((_, index) => ({
-          holeNumber: index + 1,
-          grossScore: null
-        }));
-        setScores(initialScores);
-        setDriveSelections(Array(18).fill(null));
-        setCurrentHole(0);
       }
+      setCurrentHole(firstUnscoredHole);
+    } else {
+      // Initialize empty scores
+      const initialScores = Array(18).fill(null).map((_, index) => ({
+        holeNumber: index + 1,
+        grossScore: null
+      }));
+      setScores(initialScores);
+      setDriveSelections(Array(18).fill(null));
+      setCurrentHole(0);
+    }
+  }, [tournament, round, teamId]);
 
-      setLoading(false);
-    });
-
+  // Subscribe to players
+  useEffect(() => {
     const unsubPlayers = subscribeToPlayers((playersData) => {
       setPlayers(playersData);
     });
 
-    return () => {
-      unsubTournament();
-      unsubPlayers();
-    };
-  }, [tournamentId, roundId, teamId]);
+    return () => unsubPlayers();
+  }, []);
 
   // Setup team players and handicap calculation
   useEffect(() => {
@@ -232,7 +222,7 @@ function ScrambleScoring() {
     }
   }, [team, players, round, driveSelections]);
 
-  const handleScoreChange = (holeIndex, grossScore) => {
+  const handleScoreChange = useCallback((holeIndex, grossScore) => {
     const newScores = [...scores];
     newScores[holeIndex] = {
       ...newScores[holeIndex],
@@ -243,21 +233,21 @@ function ScrambleScoring() {
     if (grossScore !== null && grossScore !== '') {
       triggerAutoSave(newScores, driveSelections);
     }
-  };
+  }, [scores, driveSelections, triggerAutoSave]);
 
-  const incrementScore = () => {
+  const incrementScore = useCallback(() => {
     const currentScore = scores[currentHole]?.grossScore;
     const newScore = increment(currentScore);
     handleScoreChange(currentHole, newScore);
-  };
+  }, [scores, currentHole, increment, handleScoreChange]);
 
-  const decrementScore = () => {
+  const decrementScore = useCallback(() => {
     const currentScore = scores[currentHole]?.grossScore;
     const newScore = decrement(currentScore);
     handleScoreChange(currentHole, newScore);
-  };
+  }, [scores, currentHole, decrement, handleScoreChange]);
 
-  const handleDriveSelection = (holeIndex, playerId) => {
+  const handleDriveSelection = useCallback((holeIndex, playerId) => {
     const newSelections = [...driveSelections];
     newSelections[holeIndex] = playerId;
     setDriveSelections(newSelections);
@@ -283,7 +273,7 @@ function ScrambleScoring() {
 
     // Auto-save drive selection
     triggerAutoSave(scores, newSelections);
-  };
+  }, [driveSelections, driveTracker, round?.scrambleConfig, teamPlayers, scores, triggerAutoSave]);
 
   const calculateNetScore = (grossScore, holeStrokeIndex) => {
     if (!grossScore) return null;
@@ -406,7 +396,25 @@ function ScrambleScoring() {
     }
   };
 
-  if (loading || !tournament || !round || !team) {
+  // Memoize expensive calculations (must be before early returns)
+  const currentScore = scores[currentHole];
+  const currentNetScore = useMemo(
+    () => {
+      if (!currentScore?.grossScore || !currentHoleData?.strokeIndex) return null;
+      return calculateNetScore(currentScore.grossScore, currentHoleData.strokeIndex);
+    },
+    [currentScore?.grossScore, currentHoleData?.strokeIndex, teamHandicap]
+  );
+
+  const totalScore = useMemo(
+    () => {
+      if (!round?.courseData?.holes) return { gross: 0, net: 0 };
+      return calculateTotalScore();
+    },
+    [scores, round?.courseData?.holes, teamHandicap]
+  );
+
+  if (tournamentLoading || !tournament || !round || !team) {
     return (
       <div className="scramble-scoring">
         <div className="loading-spinner">
@@ -416,11 +424,8 @@ function ScrambleScoring() {
     );
   }
 
-  const currentScore = scores[currentHole];
   const currentDriveSelection = driveSelections[currentHole];
   const config = round?.scrambleConfig || {};
-  const currentNetScore = calculateNetScore(currentScore?.grossScore, currentHoleData?.strokeIndex);
-  const totalScore = calculateTotalScore();
 
   return (
     <div className="scramble-scoring">

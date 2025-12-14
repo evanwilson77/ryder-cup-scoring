@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { subscribeToTournament } from '../firebase/tournamentServices';
 import { subscribeToPlayers } from '../firebase/services';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { calculateStablefordPoints, calculateStrokesReceived } from '../utils/stablefordCalculations';
-import { useAutoSave, useScoreEntry } from '../hooks';
+import { useAutoSave, useScoreEntry, useTournamentRound } from '../hooks';
 import {
   AutoSaveIndicator,
   HoleInfo,
@@ -18,12 +17,10 @@ import './BestBallScoring.css';
 function BestBallScoring() {
   const { tournamentId, roundId, teamId } = useParams();
   const navigate = useNavigate();
-  const [tournament, setTournament] = useState(null);
-  const [round, setRound] = useState(null);
+  const { tournament, round, loading: tournamentLoading } = useTournamentRound(tournamentId, roundId);
   const [team, setTeam] = useState(null);
   const [players, setPlayers] = useState([]);
   const [teamPlayers, setTeamPlayers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [currentHole, setCurrentHole] = useState(0);
   const [playerScores, setPlayerScores] = useState({}); // playerId -> array of holes
   const [scoringFormat, setScoringFormat] = useState('stroke'); // 'stroke' or 'stableford'
@@ -143,66 +140,60 @@ function BestBallScoring() {
 
   const { isSaving, save: triggerAutoSave } = useAutoSave(autoSaveScore, 1000);
 
+  // Load team and scorecard data when tournament changes
   useEffect(() => {
-    const unsubTournament = subscribeToTournament(tournamentId, (tournamentData) => {
-      setTournament(tournamentData);
+    if (!tournament || !round) return;
 
-      const foundRound = tournamentData.rounds?.find(r => r.id === roundId);
-      setRound(foundRound);
+    const foundTeam = tournament.teams?.find(t => t.id === teamId);
+    setTeam(foundTeam);
 
-      const foundTeam = tournamentData.teams?.find(t => t.id === teamId);
-      setTeam(foundTeam);
+    // Determine scoring format
+    const format = round.format === 'team_stableford' || round.scoringFormat === 'stableford'
+      ? 'stableford'
+      : 'stroke';
+    setScoringFormat(format);
 
-      // Determine scoring format
-      const format = foundRound?.format === 'team_stableford' || foundRound?.scoringFormat === 'stableford'
-        ? 'stableford'
-        : 'stroke';
-      setScoringFormat(format);
+    // Find existing scorecard or create new one
+    const existingScorecard = round.teamScorecards?.find(sc => sc.teamId === teamId);
 
-      // Find existing scorecard or create new one
-      const existingScorecard = foundRound?.teamScorecards?.find(sc => sc.teamId === teamId);
+    if (existingScorecard && existingScorecard.playerScores) {
+      setPlayerScores(existingScorecard.playerScores);
 
-      if (existingScorecard && existingScorecard.playerScores) {
-        setPlayerScores(existingScorecard.playerScores);
-
-        // Find first unscored hole
-        let firstUnscoredHole = 0;
-        for (let i = 0; i < 18; i++) {
-          const hasScore = Object.values(existingScorecard.playerScores).some(playerHoles => {
-            const hole = playerHoles.find(h => h.holeNumber === i + 1);
-            return hole && hole.grossScore !== null && hole.grossScore !== undefined;
-          });
-          if (!hasScore) {
-            firstUnscoredHole = i;
-            break;
-          }
-        }
-        setCurrentHole(firstUnscoredHole);
-      } else {
-        // Initialize empty scores for each player
-        const initialScores = {};
-        foundTeam?.players?.forEach(playerId => {
-          initialScores[playerId] = Array(18).fill(null).map((_, index) => ({
-            holeNumber: index + 1,
-            grossScore: null
-          }));
+      // Find first unscored hole
+      let firstUnscoredHole = 0;
+      for (let i = 0; i < 18; i++) {
+        const hasScore = Object.values(existingScorecard.playerScores).some(playerHoles => {
+          const hole = playerHoles.find(h => h.holeNumber === i + 1);
+          return hole && hole.grossScore !== null && hole.grossScore !== undefined;
         });
-        setPlayerScores(initialScores);
-        setCurrentHole(0);
+        if (!hasScore) {
+          firstUnscoredHole = i;
+          break;
+        }
       }
+      setCurrentHole(firstUnscoredHole);
+    } else {
+      // Initialize empty scores for each player
+      const initialScores = {};
+      foundTeam?.players?.forEach(playerId => {
+        initialScores[playerId] = Array(18).fill(null).map((_, index) => ({
+          holeNumber: index + 1,
+          grossScore: null
+        }));
+      });
+      setPlayerScores(initialScores);
+      setCurrentHole(0);
+    }
+  }, [tournament, round, teamId]);
 
-      setLoading(false);
-    });
-
+  // Subscribe to players
+  useEffect(() => {
     const unsubPlayers = subscribeToPlayers((playersData) => {
       setPlayers(playersData);
     });
 
-    return () => {
-      unsubTournament();
-      unsubPlayers();
-    };
-  }, [tournamentId, roundId, teamId]);
+    return () => unsubPlayers();
+  }, []);
 
 
   // Setup team players
@@ -216,7 +207,7 @@ function BestBallScoring() {
   }, [team, players]);
 
 
-  const handleScoreChange = (playerId, holeIndex, grossScore) => {
+  const handleScoreChange = useCallback((playerId, holeIndex, grossScore) => {
     const updatedScores = {
       ...playerScores,
       [playerId]: playerScores[playerId].map((hole, idx) =>
@@ -228,19 +219,19 @@ function BestBallScoring() {
     if (grossScore !== null && grossScore !== '') {
       triggerAutoSave(updatedScores);
     }
-  };
+  }, [playerScores, triggerAutoSave]);
 
-  const incrementScore = (playerId, holeIndex) => {
+  const incrementScore = useCallback((playerId, holeIndex) => {
     const currentScore = playerScores[playerId]?.[holeIndex]?.grossScore;
     const newScore = increment(currentScore);
     handleScoreChange(playerId, holeIndex, newScore);
-  };
+  }, [playerScores, increment, handleScoreChange]);
 
-  const decrementScore = (playerId, holeIndex) => {
+  const decrementScore = useCallback((playerId, holeIndex) => {
     const currentScore = playerScores[playerId]?.[holeIndex]?.grossScore;
     const newScore = decrement(currentScore);
     handleScoreChange(playerId, holeIndex, newScore);
-  };
+  }, [playerScores, decrement, handleScoreChange]);
 
   const calculateBestScoreWithScores = (holeIndex, scores) => {
     const holeData = round?.courseData?.holes?.[holeIndex];
@@ -356,7 +347,18 @@ function BestBallScoring() {
   };
 
 
-  if (loading || !tournament || !round || !team) {
+  // Memoize expensive calculations (must be before early returns)
+  const totalScore = useMemo(
+    () => {
+      if (!round?.courseData?.holes || !teamPlayers.length) {
+        return { totalGross: 0, totalNet: 0, totalPoints: 0 };
+      }
+      return calculateTotalScore();
+    },
+    [playerScores, round?.courseData?.holes, teamPlayers, scoringFormat]
+  );
+
+  if (tournamentLoading || !tournament || !round || !team) {
     return (
       <div className="best-ball-scoring">
         <div className="loading-spinner">
@@ -458,7 +460,7 @@ function BestBallScoring() {
               <>
                 <div className="total-item">
                   <span className="label">Total Points</span>
-                  <span className="value">{calculateTotalScore().totalPoints || 0}</span>
+                  <span className="value">{totalScore.totalPoints || 0}</span>
                 </div>
                 <div className="total-item">
                   <span className="label">Holes Completed</span>
@@ -478,17 +480,17 @@ function BestBallScoring() {
               <>
                 <div className="total-item">
                   <span className="label">Gross</span>
-                  <span className="value">{calculateTotalScore().totalGross || 0}</span>
+                  <span className="value">{totalScore.totalGross || 0}</span>
                 </div>
                 <div className="total-item">
                   <span className="label">Net</span>
-                  <span className="value">{calculateTotalScore().totalNet || 0}</span>
+                  <span className="value">{totalScore.totalNet || 0}</span>
                 </div>
                 <div className="total-item">
                   <span className="label">To Par</span>
                   <span className="value">
                     {(() => {
-                      const totalNet = calculateTotalScore().totalNet || 0;
+                      const totalNet = totalScore.totalNet || 0;
                       // Calculate par only for completed holes
                       let completedHolesPar = 0;
                       for (let i = 0; i < 18; i++) {

@@ -48,4 +48,4 @@ CreationProgressSteps.propTypes = {
   currentStep: PropTypes.number.isRequired
 };
 
-export default CreationProgressSteps;
+export default React.memo(CreationProgressSteps);

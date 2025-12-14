@@ -79,4 +79,4 @@ ScoreEntry.propTypes = {
   className: PropTypes.string
 };
 
-export default ScoreEntry;
+export default React.memo(ScoreEntry);

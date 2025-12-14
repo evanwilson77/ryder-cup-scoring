@@ -57,4 +57,4 @@ HoleInfo.propTypes = {
   className: PropTypes.string
 };
 
-export default HoleInfo;
+export default React.memo(HoleInfo);

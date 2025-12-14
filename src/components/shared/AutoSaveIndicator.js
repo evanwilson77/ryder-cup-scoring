@@ -31,4 +31,4 @@ AutoSaveIndicator.propTypes = {
   className: PropTypes.string
 };
 
-export default AutoSaveIndicator;
+export default React.memo(AutoSaveIndicator);

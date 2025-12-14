@@ -96,4 +96,4 @@ PlayerScoreEntry.propTypes = {
   className: PropTypes.string
 };
 
-export default PlayerScoreEntry;
+export default React.memo(PlayerScoreEntry);
