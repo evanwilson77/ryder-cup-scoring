@@ -144,6 +144,8 @@ function BestBallScoring() {
   const { isSaving, save: triggerAutoSave } = useAutoSave(autoSaveScore, 1000);
 
   // Load team and scorecard data when tournament changes
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
   useEffect(() => {
     if (!tournament || !round) return;
 
@@ -162,19 +164,22 @@ function BestBallScoring() {
     if (existingScorecard && existingScorecard.playerScores) {
       setPlayerScores(existingScorecard.playerScores);
 
-      // Find first unscored hole
-      let firstUnscoredHole = 0;
-      for (let i = 0; i < 18; i++) {
-        const hasScore = Object.values(existingScorecard.playerScores).some(playerHoles => {
-          const hole = playerHoles.find(h => h.holeNumber === i + 1);
-          return hole && hole.grossScore !== null && hole.grossScore !== undefined;
-        });
-        if (!hasScore) {
-          firstUnscoredHole = i;
-          break;
+      // Only auto-jump to first unscored hole on initial load, not after every autosave
+      if (!initialLoadDone) {
+        let firstUnscoredHole = 0;
+        for (let i = 0; i < 18; i++) {
+          const hasScore = Object.values(existingScorecard.playerScores).some(playerHoles => {
+            const hole = playerHoles.find(h => h.holeNumber === i + 1);
+            return hole && hole.grossScore !== null && hole.grossScore !== undefined;
+          });
+          if (!hasScore) {
+            firstUnscoredHole = i;
+            break;
+          }
         }
+        setCurrentHole(firstUnscoredHole);
+        setInitialLoadDone(true);
       }
-      setCurrentHole(firstUnscoredHole);
     } else {
       // Initialize empty scores for each player
       const initialScores = {};
@@ -185,9 +190,12 @@ function BestBallScoring() {
         }));
       });
       setPlayerScores(initialScores);
-      setCurrentHole(0);
+      if (!initialLoadDone) {
+        setCurrentHole(0);
+        setInitialLoadDone(true);
+      }
     }
-  }, [tournament, round, teamId]);
+  }, [tournament, round, teamId, initialLoadDone]);
 
   // Subscribe to players
   useEffect(() => {

@@ -21,23 +21,23 @@ function StablefordLeaderboard() {
 
       // Auto-select current tournament if already set
       if (!selectedTournament && tournamentsData.length > 0) {
-        // Try to find a stableford tournament to auto-select
-        const stablefordTournaments = tournamentsData.filter(t =>
+        // Try to find an individual tournament (stableford or stroke play) to auto-select
+        const individualTournaments = tournamentsData.filter(t =>
           t.rounds?.some(r =>
-            r.format === 'individual_stableford' || r.format === 'team_stableford'
+            r.format === 'individual_stableford' || r.format === 'individual'
           )
         );
 
-        if (stablefordTournaments.length > 0) {
-          const openTournaments = stablefordTournaments.filter(t =>
+        if (individualTournaments.length > 0) {
+          const openTournaments = individualTournaments.filter(t =>
             t.status === 'in_progress' || t.status === 'setup'
           ).sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 
           if (openTournaments.length > 0) {
             setSelectedTournament(openTournaments[0]);
           } else {
-            // If no open tournaments, show most recent stableford
-            const sortedByDate = [...stablefordTournaments].sort((a, b) =>
+            // If no open tournaments, show most recent individual tournament
+            const sortedByDate = [...individualTournaments].sort((a, b) =>
               new Date(b.startDate) - new Date(a.startDate)
             );
             if (sortedByDate.length > 0) {
@@ -45,7 +45,7 @@ function StablefordLeaderboard() {
             }
           }
         } else {
-          // No stableford tournaments at all - navigate back to main leaderboard
+          // No individual tournaments at all - navigate back to main leaderboard
           navigate('/leaderboard');
         }
       }
@@ -66,6 +66,9 @@ function StablefordLeaderboard() {
 
   const calculateLeaderboard = () => {
     const playerScores = new Map();
+
+    // Determine tournament format (stableford vs stroke play)
+    const isStableford = selectedTournament.rounds?.some(r => r.format === 'individual_stableford');
 
     // Collect all scorecards from all rounds
     selectedTournament.rounds?.forEach(round => {
@@ -108,12 +111,23 @@ function StablefordLeaderboard() {
         if (isCompleted) {
           playerData.roundsCompleted++;
 
-          // Track best round
-          if (!playerData.bestRound || (scorecard.totalPoints || 0) > playerData.bestRound.points) {
-            playerData.bestRound = {
-              points: scorecard.totalPoints || 0,
-              roundName: round.name
-            };
+          // Track best round (for stableford: highest points, for stroke play: lowest net)
+          if (isStableford) {
+            if (!playerData.bestRound || (scorecard.totalPoints || 0) > playerData.bestRound.points) {
+              playerData.bestRound = {
+                points: scorecard.totalPoints || 0,
+                net: scorecard.totalNet || 0,
+                roundName: round.name
+              };
+            }
+          } else {
+            if (!playerData.bestRound || (scorecard.totalNet || 999) < (playerData.bestRound.net || 999)) {
+              playerData.bestRound = {
+                points: scorecard.totalPoints || 0,
+                net: scorecard.totalNet || 0,
+                roundName: round.name
+              };
+            }
           }
         }
       });
@@ -126,18 +140,40 @@ function StablefordLeaderboard() {
         ...data,
         playerName: player?.name || 'Unknown',
         playerHandicap: player?.handicap || 0,
-        avgPoints: data.roundsCompleted > 0 ? (data.totalPoints / data.roundsCompleted).toFixed(1) : 0
+        avgPoints: data.roundsCompleted > 0 ? (data.totalPoints / data.roundsCompleted).toFixed(1) : 0,
+        avgNet: data.roundsCompleted > 0 ? (data.totalNet / data.roundsCompleted).toFixed(1) : 0
       };
     });
 
-    // Sort by total points descending
-    leaderboardArray.sort((a, b) => b.totalPoints - a.totalPoints);
+    // Sort based on format
+    if (isStableford) {
+      // Stableford: highest points wins
+      leaderboardArray.sort((a, b) => b.totalPoints - a.totalPoints);
+    } else {
+      // Stroke play: lowest net score wins
+      // Only rank players who have completed at least one round
+      leaderboardArray.sort((a, b) => {
+        if (a.roundsCompleted === 0 && b.roundsCompleted === 0) return 0;
+        if (a.roundsCompleted === 0) return 1;
+        if (b.roundsCompleted === 0) return -1;
+        return a.totalNet - b.totalNet;
+      });
+    }
 
     // Add position with tie handling
     let currentPosition = 1;
     leaderboardArray.forEach((entry, index) => {
-      if (index > 0 && entry.totalPoints === leaderboardArray[index - 1].totalPoints) {
-        entry.position = leaderboardArray[index - 1].position;
+      if (index > 0) {
+        const prev = leaderboardArray[index - 1];
+        const isTie = isStableford
+          ? entry.totalPoints === prev.totalPoints
+          : entry.totalNet === prev.totalNet && entry.roundsCompleted > 0 && prev.roundsCompleted > 0;
+
+        if (isTie) {
+          entry.position = prev.position;
+        } else {
+          entry.position = currentPosition;
+        }
       } else {
         entry.position = currentPosition;
       }
@@ -170,8 +206,8 @@ function StablefordLeaderboard() {
         <div className="card">
           <div className="empty-state">
             <TrophyIcon className="empty-icon" />
-            <h2>No Stableford Tournaments Found</h2>
-            <p>Create a Stableford tournament to see the leaderboard</p>
+            <h2>No Individual Tournaments Found</h2>
+            <p>Create an individual tournament to see the leaderboard</p>
             <button onClick={() => navigate('/tournaments/create')} className="button primary">
               Create Tournament
             </button>
@@ -182,7 +218,10 @@ function StablefordLeaderboard() {
   }
 
   const totalRounds = selectedTournament.rounds?.length || 0;
+  const isStableford = selectedTournament.rounds?.some(r => r.format === 'individual_stableford');
   const targetPoints = 36 * totalRounds; // 36 points per round = playing to handicap
+  const coursePar = selectedTournament.rounds?.[0]?.courseData?.totalPar || 72;
+  const targetScore = coursePar * totalRounds; // Total par for all rounds
 
   return (
     <div className="stableford-leaderboard">
@@ -196,15 +235,15 @@ function StablefordLeaderboard() {
             onChange={(e) => {
               const tournament = tournaments.find(t => t.id === e.target.value);
 
-              // Check if selected tournament is a stableford tournament
-              const isStableford = tournament?.rounds?.some(r =>
-                r.format === 'individual_stableford' || r.format === 'team_stableford'
+              // Check if selected tournament is an individual tournament (stableford or stroke play)
+              const isIndividual = tournament?.rounds?.some(r =>
+                r.format === 'individual_stableford' || r.format === 'individual'
               );
 
-              if (isStableford) {
+              if (isIndividual) {
                 setSelectedTournament(tournament);
               } else {
-                // Non-stableford tournament - navigate to regular leaderboard with tournament ID in URL
+                // Team tournament - navigate to regular leaderboard with tournament ID in URL
                 navigate(`/leaderboard?t=${tournament.id}`);
               }
             }}
@@ -264,8 +303,8 @@ function StablefordLeaderboard() {
             </div>
             <div className="stat-item">
               <TrophyIcon className="stat-icon" />
-              <div className="stat-value">{targetPoints}</div>
-              <div className="stat-label">Target</div>
+              <div className="stat-value">{isStableford ? targetPoints : targetScore}</div>
+              <div className="stat-label">{isStableford ? 'Target (Pts)' : 'Par'}</div>
             </div>
           </div>
         </div>
@@ -318,8 +357,8 @@ function StablefordLeaderboard() {
                       <div className="player-handicap">HCP {entry.playerHandicap.toFixed(1)}</div>
                     </div>
                     <div className="points-display">
-                      <div className="points-value">{entry.totalPoints}</div>
-                      <div className="points-label">pts</div>
+                      <div className="points-value">{isStableford ? entry.totalPoints : entry.totalNet}</div>
+                      <div className="points-label">{isStableford ? 'pts' : 'net'}</div>
                     </div>
                   </div>
 
@@ -333,17 +372,19 @@ function StablefordLeaderboard() {
                       </div>
                       {entry.roundsCompleted > 0 && (
                         <>
-                          <div className="score-item">
-                            <span className="score-label">Avg Points</span>
-                            <span className="score-value">{entry.avgPoints}</span>
-                          </div>
+                          {isStableford && (
+                            <div className="score-item">
+                              <span className="score-label">Avg Points</span>
+                              <span className="score-value">{entry.avgPoints}</span>
+                            </div>
+                          )}
                           <div className="score-item">
                             <span className="score-label">Total Gross</span>
                             <span className="score-value">{entry.totalGross}</span>
                           </div>
                           <div className="score-item">
-                            <span className="score-label">Total Net</span>
-                            <span className="score-value">{entry.totalNet}</span>
+                            <span className="score-label">{isStableford ? 'Total Net' : 'Avg Net'}</span>
+                            <span className="score-value">{isStableford ? entry.totalNet : entry.avgNet}</span>
                           </div>
                         </>
                       )}
@@ -378,16 +419,18 @@ function StablefordLeaderboard() {
                   <th className="player-col">Player</th>
                   <th className="handicap-col">HCP</th>
                   <th className="rounds-col">Rounds</th>
-                  <th className="points-col">Points</th>
-                  <th className="avg-col">Avg</th>
+                  <th className="points-col">{isStableford ? 'Points' : 'Net'}</th>
+                  <th className="avg-col">{isStableford ? 'Avg Pts' : 'Avg Net'}</th>
                   <th className="gross-col">Gross</th>
-                  <th className="net-col">Net</th>
-                  <th className="vs-target-col">vs Target</th>
+                  {isStableford && <th className="net-col">Net</th>}
+                  <th className="vs-target-col">{isStableford ? 'vs Target' : 'vs Par'}</th>
                 </tr>
               </thead>
               <tbody>
                 {leaderboardData.map((entry, index) => {
-                  const vsTarget = entry.totalPoints - (36 * entry.roundsCompleted);
+                  const vsTarget = isStableford
+                    ? entry.totalPoints - (36 * entry.roundsCompleted)
+                    : entry.totalNet - (coursePar * entry.roundsCompleted);
                   return (
                     <tr key={entry.playerId} className={entry.position <= 3 ? 'top-three' : ''}>
                       <td className="position-col">
@@ -400,7 +443,7 @@ function StablefordLeaderboard() {
                           {entry.playerName}
                           {entry.bestRound && entry.roundsCompleted > 1 && (
                             <span className="best-round-badge" title={`Best: ${entry.bestRound.roundName}`}>
-                              🔥 {entry.bestRound.points}
+                              🔥 {isStableford ? entry.bestRound.points + 'pts' : entry.bestRound.net}
                             </span>
                           )}
                         </div>
@@ -414,20 +457,22 @@ function StablefordLeaderboard() {
                         </span>
                       </td>
                       <td className="points-col">
-                        <span className="points-value-large">{entry.totalPoints}</span>
+                        <span className="points-value-large">{isStableford ? entry.totalPoints : entry.totalNet}</span>
                       </td>
                       <td className="avg-col">
-                        {entry.roundsCompleted > 0 ? entry.avgPoints : '-'}
+                        {entry.roundsCompleted > 0 ? (isStableford ? entry.avgPoints : entry.avgNet) : '-'}
                       </td>
                       <td className="gross-col">
                         {entry.totalGross > 0 ? entry.totalGross : '-'}
                       </td>
-                      <td className="net-col">
-                        {entry.totalNet > 0 ? entry.totalNet : '-'}
-                      </td>
+                      {isStableford && (
+                        <td className="net-col">
+                          {entry.totalNet > 0 ? entry.totalNet : '-'}
+                        </td>
+                      )}
                       <td className="vs-target-col">
                         {entry.roundsCompleted > 0 ? (
-                          <span className={vsTarget >= 0 ? 'positive' : 'negative'}>
+                          <span className={vsTarget >= 0 ? (isStableford ? 'positive' : 'negative') : (isStableford ? 'negative' : 'positive')}>
                             {formatScoreToPar(vsTarget)}
                           </span>
                         ) : '-'}

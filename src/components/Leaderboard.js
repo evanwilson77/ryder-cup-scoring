@@ -264,13 +264,13 @@ function Leaderboard() {
   // Check if this is a team-based format
   const isTeamFormat = selectedTournament.hasTeams === true || (selectedTournament.teams && selectedTournament.teams.length > 0);
 
-  // If INDIVIDUAL stableford tournament, show Stableford leaderboard
-  // Team stableford tournaments will use the regular team leaderboard below
-  const hasIndividualStablefordRounds = selectedTournament.rounds?.some(r =>
-    r.format === 'individual_stableford'
+  // If INDIVIDUAL tournament (stableford OR stroke play), show individual leaderboard
+  // Team tournaments will use the regular team leaderboard below
+  const hasIndividualRounds = selectedTournament.rounds?.some(r =>
+    r.format === 'individual_stableford' || r.format === 'individual'
   );
 
-  if (hasIndividualStablefordRounds && !isTeamFormat) {
+  if (hasIndividualRounds && !isTeamFormat) {
     return <StablefordLeaderboard />;
   }
 
