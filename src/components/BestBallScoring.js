@@ -164,6 +164,20 @@ function BestBallScoring() {
 
       if (existingScorecard && existingScorecard.playerScores) {
         setPlayerScores(existingScorecard.playerScores);
+
+        // Find first unscored hole
+        let firstUnscoredHole = 0;
+        for (let i = 0; i < 18; i++) {
+          const hasScore = Object.values(existingScorecard.playerScores).some(playerHoles => {
+            const hole = playerHoles.find(h => h.holeNumber === i + 1);
+            return hole && hole.grossScore !== null && hole.grossScore !== undefined;
+          });
+          if (!hasScore) {
+            firstUnscoredHole = i;
+            break;
+          }
+        }
+        setCurrentHole(firstUnscoredHole);
       } else {
         // Initialize empty scores for each player
         const initialScores = {};
@@ -174,6 +188,7 @@ function BestBallScoring() {
           }));
         });
         setPlayerScores(initialScores);
+        setCurrentHole(0);
       }
 
       setLoading(false);

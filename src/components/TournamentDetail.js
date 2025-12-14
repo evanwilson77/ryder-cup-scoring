@@ -1117,13 +1117,13 @@ function TournamentDetail() {
 
                               <div className="scorecard-scores">
                                 {match.status === 'in_progress' && !match.result && (
-                                  <div className="score-item">
+                                  <div key="progress" className="score-item">
                                     <span className="score-label">Progress</span>
                                     <span className="score-value">{holesCompleted} / 18</span>
                                   </div>
                                 )}
                                 {match.result && (
-                                  <div className="score-item">
+                                  <div key="result" className="score-item">
                                     <span className="score-label">Result</span>
                                     <span className="score-value">{match.result}</span>
                                   </div>

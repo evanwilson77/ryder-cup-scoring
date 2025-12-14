@@ -157,6 +157,18 @@ function ScrambleScoring() {
       if (existingScorecard) {
         setScores(existingScorecard.holes || []);
         setDriveSelections(existingScorecard.driveSelections || []);
+
+        // Find first unscored hole
+        const holes = existingScorecard.holes || [];
+        let firstUnscoredHole = 0;
+        for (let i = 0; i < 18; i++) {
+          const hole = holes.find(h => h.holeNumber === i + 1);
+          if (!hole || hole.grossScore === null || hole.grossScore === undefined) {
+            firstUnscoredHole = i;
+            break;
+          }
+        }
+        setCurrentHole(firstUnscoredHole);
       } else {
         // Initialize empty scores
         const initialScores = Array(18).fill(null).map((_, index) => ({
@@ -165,6 +177,7 @@ function ScrambleScoring() {
         }));
         setScores(initialScores);
         setDriveSelections(Array(18).fill(null));
+        setCurrentHole(0);
       }
 
       setLoading(false);
