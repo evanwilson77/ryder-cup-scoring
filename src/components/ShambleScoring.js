@@ -7,6 +7,7 @@ import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { calculateStablefordPoints, calculateStrokesReceived } from '../utils/stablefordCalculations';
 import { ScrambleDriveTracker } from '../utils/scrambleCalculations';
 import { useAutoSave, useScoreEntry, useTournamentRound } from '../hooks';
+import { useToast } from './Toast';
 import {
   AutoSaveIndicator,
   HoleInfo,
@@ -18,6 +19,7 @@ import './ShambleScoring.css';
 function ShambleScoring() {
   const { tournamentId, roundId, teamId } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const { tournament, round, loading: tournamentLoading } = useTournamentRound(tournamentId, roundId);
   const [team, setTeam] = useState(null);
   const [players, setPlayers] = useState([]);
@@ -140,6 +142,7 @@ function ShambleScoring() {
       await updateDoc(doc(db, 'tournaments', tournamentId), cleanedUpdate);
     } catch (error) {
       console.error('Error auto-saving:', error);
+      toast.error('Failed to save changes');
     }
   };
 
@@ -448,11 +451,12 @@ function ShambleScoring() {
 
       await updateDoc(doc(db, 'tournaments', tournamentId), cleanedUpdate);
 
+      toast.success('Shamble scorecard submitted successfully!');
       navigate(`/tournaments/${tournamentId}`);
       return true;
     } catch (error) {
       console.error('Error saving score:', error);
-      alert('Failed to save score. Please try again.');
+      toast.error('Failed to submit scorecard. Please try again.');
       return false;
     }
   };

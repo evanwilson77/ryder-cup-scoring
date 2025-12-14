@@ -6,6 +6,7 @@ import { subscribeToPlayers } from '../firebase/services';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { calculateStablefordPoints, calculateStrokesReceived } from '../utils/stablefordCalculations';
 import { useAutoSave, useScoreEntry, useTournamentRound } from '../hooks';
+import { useToast } from './Toast';
 import {
   AutoSaveIndicator,
   HoleInfo,
@@ -17,6 +18,7 @@ import './BestBallScoring.css';
 function BestBallScoring() {
   const { tournamentId, roundId, teamId } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const { tournament, round, loading: tournamentLoading } = useTournamentRound(tournamentId, roundId);
   const [team, setTeam] = useState(null);
   const [players, setPlayers] = useState([]);
@@ -135,6 +137,7 @@ function BestBallScoring() {
       await updateDoc(doc(db, 'tournaments', tournamentId), cleanedUpdate);
     } catch (error) {
       console.error('Error auto-saving:', error);
+      toast.error('Failed to save changes');
     }
   };
 
@@ -572,7 +575,7 @@ function BestBallScoring() {
                         rounds: updatedRounds
                       });
 
-                      alert('Round completed successfully!');
+                      toast.success('Best ball round completed successfully!');
                       navigate(`/tournaments/${tournamentId}`);
                     }
                   }}

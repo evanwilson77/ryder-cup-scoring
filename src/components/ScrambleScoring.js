@@ -10,6 +10,7 @@ import {
   ScrambleDriveTracker
 } from '../utils/scrambleCalculations';
 import { useAutoSave, useScoreEntry, useTournamentRound } from '../hooks';
+import { useToast } from './Toast';
 import {
   AutoSaveIndicator,
   HoleInfo,
@@ -21,6 +22,7 @@ import './ScrambleScoring.css';
 function ScrambleScoring() {
   const { tournamentId, roundId, teamId } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const { tournament, round, loading: tournamentLoading } = useTournamentRound(tournamentId, roundId);
   const [team, setTeam] = useState(null);
   const [players, setPlayers] = useState([]);
@@ -132,6 +134,7 @@ function ScrambleScoring() {
       await updateDoc(doc(db, 'tournaments', tournamentId), cleanedUpdate);
     } catch (error) {
       console.error('Error auto-saving:', error);
+      toast.error('Failed to save changes');
     }
   };
 
@@ -387,11 +390,12 @@ function ScrambleScoring() {
 
       await updateDoc(doc(db, 'tournaments', tournamentId), cleanedUpdate);
 
+      toast.success('Scramble scorecard submitted successfully!');
       navigate(`/tournaments/${tournamentId}`);
       return true;
     } catch (error) {
       console.error('Error saving score:', error);
-      alert('Failed to save score. Please try again.');
+      toast.error('Failed to submit scorecard. Please try again.');
       return false;
     }
   };
