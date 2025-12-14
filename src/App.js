@@ -33,6 +33,7 @@ import AnomalyLogs from './components/AnomalyLogs';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import PullToRefresh from './components/PullToRefresh';
 import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './components/Toast';
 import { useMobileOptimizations, usePerformanceMonitor } from './hooks/useMobileOptimizations';
 
 // Protected Route Component
@@ -241,7 +242,9 @@ function App() {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
-        <AppContent />
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
       </AuthProvider>
     </Router>
   );
