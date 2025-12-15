@@ -9,6 +9,7 @@ import {
 } from '../utils/stablefordCalculations';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useAutoSave, useScoreEntry } from '../hooks';
+import { useSwipeGestures } from '../hooks/useSwipeGestures';
 import {
   AutoSaveIndicator,
   ScoreCard,
@@ -203,6 +204,20 @@ function StablefordScoring() {
     });
   };
 
+  const nextHole = () => {
+    if (currentHole < 17) {
+      setCurrentHole(currentHole + 1);
+    }
+  };
+
+  const previousHole = () => {
+    if (currentHole > 0) {
+      setCurrentHole(currentHole - 1);
+    }
+  };
+
+  // Swipe gesture handlers for hole navigation
+  const swipeHandlers = useSwipeGestures(nextHole, previousHole);
 
   if (loading) {
     return (
@@ -225,7 +240,7 @@ function StablefordScoring() {
   });
 
   return (
-    <div className="stableford-scoring">
+    <div className="stableford-scoring" {...swipeHandlers}>
       {/* Header */}
       <div className="scoring-header">
         <button onClick={() => navigate(`/tournaments/${tournamentId}`)} className="back-button">
@@ -290,14 +305,14 @@ function StablefordScoring() {
         {/* Navigation Buttons */}
         <div className="hole-navigation-buttons">
           <button
-            onClick={() => setCurrentHole(Math.max(0, currentHole - 1))}
+            onClick={previousHole}
             disabled={currentHole === 0}
             className="nav-btn secondary"
           >
             ← Prev
           </button>
           <button
-            onClick={() => setCurrentHole(Math.min(17, currentHole + 1))}
+            onClick={nextHole}
             disabled={currentHole === 17}
             className="nav-btn secondary"
           >

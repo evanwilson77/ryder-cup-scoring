@@ -6,6 +6,7 @@ import { ArrowLeftIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { calculateNetScore } from '../utils/scoring';
 import { useAuth } from '../contexts/AuthContext';
 import { useAutoSave, useScoreEntry } from '../hooks';
+import { useSwipeGestures } from '../hooks/useSwipeGestures';
 import HoleInfo from './shared/HoleInfo';
 import ScoreCard from './shared/ScoreCard';
 import ScoreEntry from './shared/ScoreEntry';
@@ -185,6 +186,9 @@ function ScorecardScoring() {
     }
   };
 
+  // Swipe gesture handlers for hole navigation
+  const swipeHandlers = useSwipeGestures(nextHole, previousHole);
+
   if (loading || !tournament || !round || !scorecard || !player) {
     return (
       <div className="scorecard-scoring">
@@ -207,7 +211,7 @@ function ScorecardScoring() {
   const points = netScore && holeData ? calculateStablefordPoints(netScore, holeData.par) : null;
 
   return (
-    <div className="scorecard-scoring">
+    <div className="scorecard-scoring" {...swipeHandlers}>
       <div className="scoring-header-bar">
         <button
           onClick={() => navigate(`/tournaments/${tournamentId}`)}
