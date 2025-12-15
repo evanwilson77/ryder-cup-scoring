@@ -1,69 +1,162 @@
-# Ryder Cup Scoring App
-By Evan Wilson
-A real-time golf tournament scoring application built for Ryder Cup format competitions, featuring live scoring, match play formats, and handicap calculations.
+# ⛳ Ryder Cup Scoring App
 
-## Features
+**By Evan Wilson**
 
-- **Team Management**: Configure two teams with custom names and colors (default: Tawa Lads in red, Rest of World)
-- **Player Management**: Add players with handicaps to each team
-- **Course Configuration**: Set up 18 holes with par values and stroke indexes
-- **Multiple Match Formats**:
-  - Singles (1v1)
-  - Foursomes (2v2 alternate shot)
-  - Four-ball (2v2 best ball)
-- **Live Scoring**: Real-time hole-by-hole scoring with automatic match play calculations
-- **Handicap System**: Stroke index-based handicapping
-- **Real-time Leaderboard**: Live tournament standings with match results
-- **Firebase Backend**: Cloud-hosted data with real-time updates
+A comprehensive real-time golf tournament management and scoring application built for Ryder Cup-style competitions. Features live scoring, multiple tournament formats, handicap calculations, analytics, and mobile-optimized Progressive Web App (PWA) capabilities.
 
-## Tech Stack
+## 🎯 Features
 
-- **Frontend**: React 18
-- **Backend**: Firebase (Firestore)
+### Tournament Management
+- **Multi-Round Tournaments**: Create tournaments with multiple rounds and different formats
+- **Tournament Series**: Track performance across multiple tournaments throughout a season
+- **Flexible Formats**: Support for individual and team-based competitions
+- **Tournament Dashboard**: Comprehensive overview of all active and past tournaments
+- **Edition Tracking**: Automatic tournament numbering and historical records
+
+### Scoring Formats
+
+#### Individual Formats
+- **Stroke Play**: Traditional gross and net scoring with handicap adjustments
+- **Stableford**: Points-based scoring system with par-based point allocation
+
+#### Team Formats
+- **Best Ball**: Each player plays their own ball, best score counts
+- **Team Stableford**: Best Stableford points per hole
+- **Scramble**: All players hit, team plays best shot, extensive drive tracking
+- **Shamble**: Scramble off the tee, individual play after, best score counts
+
+### Player & Team Management
+- **Player Profiles**: Comprehensive player management with handicap tracking
+- **Team Configuration**: Create and manage teams with custom names and colors
+- **Handicap System**: Full stroke index-based handicapping with automatic adjustments
+- **Player Statistics**: Detailed performance analytics per player
+- **Honours Board**: Historical records of tournament winners and achievements
+
+### Scoring Features
+- **Live Scoring**: Real-time hole-by-hole scoring with instant leaderboard updates
+- **Auto-Save**: Automatic score persistence to prevent data loss
+- **Swipe Navigation**: Mobile-friendly swipe gestures for hole navigation
+- **Score Validation**: Automatic calculation of net scores, points, and totals
+- **Visual Scorecard**: Traditional golf scorecard view for in-progress matches
+
+### Analytics & Insights
+- **Tournament Analytics**:
+  - Hole difficulty analysis
+  - Score distribution (eagles, birdies, pars, bogeys)
+  - Top hardest/easiest holes
+- **Player Statistics**:
+  - Career performance metrics
+  - Best scores and averages
+  - Score distribution visualization
+  - Total rounds and points
+- **Series Leaderboard**: Season-long standings across multiple tournaments
+
+### Mobile & PWA Features
+- **Progressive Web App**: Install to home screen, works offline
+- **Service Worker**: Sophisticated caching for offline functionality
+- **Pull-to-Refresh**: Visual refresh indicator
+- **Code Splitting**: Optimized loading with lazy-loaded routes
+- **Bottom Sheets**: Native mobile-style modals
+- **Touch Optimized**: Swipe gestures and mobile-first design
+- **Responsive Design**: Seamless experience on all devices
+
+### Additional Features
+- **Course Library**: Save and reuse course configurations
+- **Media Management**: Photo uploads for tournaments (with compression)
+- **Admin Controls**: Secure admin authentication for management functions
+- **Anomaly Detection**: Automatic detection of unusual scores for data integrity
+- **Error Boundaries**: Graceful error handling throughout the app
+- **Help System**: Built-in user guide and documentation
+
+## 🏗️ Architecture
+
+### Tech Stack
+- **Frontend**: React 18 with Hooks
+- **Backend**: Firebase (Firestore, Storage, Authentication)
 - **Routing**: React Router v6
-- **Styling**: Custom CSS
+- **Styling**: Custom CSS with Tailwind utilities
+- **Icons**: Heroicons
+- **State Management**: React Context API
+- **PWA**: Service Workers, Web App Manifest
 
-## Prerequisites
+### Project Structure
+```
+src/
+├── components/          # React components
+│   ├── shared/         # Reusable shared components
+│   ├── media/          # Media handling components
+│   └── ...             # Feature components
+├── contexts/           # React Context providers
+├── firebase/           # Firebase services and config
+├── hooks/              # Custom React hooks
+├── utils/              # Utility functions and calculations
+├── App.js              # Main app component with routing
+└── index.js            # App entry point
 
+public/
+├── service-worker.js   # PWA service worker
+└── manifest.json       # PWA manifest
+```
+
+### Key Design Patterns
+- **Component Extraction**: Shared components for consistency (HoleInfo, ScoreCard, etc.)
+- **Custom Hooks**: Reusable logic (useAutoSave, useTournamentRound, useSwipeGestures)
+- **Firebase Subscriptions**: Real-time data synchronization with Firestore
+- **Code Splitting**: Lazy-loaded routes for optimal performance
+- **Error Boundaries**: Graceful error handling and recovery
+
+## 🚀 Setup Instructions
+
+### Prerequisites
 - Node.js (v14 or higher)
 - npm or yarn
 - Firebase account
 
-## Setup Instructions
-
 ### 1. Install Dependencies
-
 ```bash
 npm install
 ```
 
 ### 2. Firebase Setup
 
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project (or use existing)
-3. Enable Firestore Database:
-   - Go to Build > Firestore Database
-   - Click "Create database"
-   - Start in **test mode** (for development)
-   - Choose your region
+1. **Create Firebase Project**
+   - Go to [Firebase Console](https://console.firebase.google.com/)
+   - Click "Add project" and follow the wizard
+   - Choose a project name (e.g., "ryder-cup-scoring")
 
-4. Get your Firebase configuration:
+2. **Enable Firestore Database**
+   - Navigate to Build > Firestore Database
+   - Click "Create database"
+   - Start in **test mode** for development
+   - Choose your preferred region
+
+3. **Enable Firebase Storage** (for photos)
+   - Navigate to Build > Storage
+   - Click "Get started"
+   - Use default security rules for development
+
+4. **Enable Authentication**
+   - Navigate to Build > Authentication
+   - Click "Get started"
+   - Enable Email/Password provider
+
+5. **Get Firebase Configuration**
    - Go to Project Settings (gear icon)
-   - Scroll down to "Your apps"
+   - Scroll to "Your apps"
    - Click the web icon (</>)
    - Register your app
-   - Copy the configuration values
+   - Copy the configuration object
 
 ### 3. Configure Environment Variables
 
-1. Copy the example environment file:
+1. Create `.env` file in the root directory:
    ```bash
    cp .env.example .env
    ```
 
-2. Edit `.env` and add your Firebase configuration:
-   ```
-   REACT_APP_FIREBASE_API_KEY=your_api_key
+2. Add your Firebase configuration to `.env`:
+   ```env
+   REACT_APP_FIREBASE_API_KEY=your_api_key_here
    REACT_APP_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
    REACT_APP_FIREBASE_PROJECT_ID=your_project_id
    REACT_APP_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
@@ -71,18 +164,13 @@ npm install
    REACT_APP_FIREBASE_APP_ID=your_app_id
    ```
 
-### 4. Firestore Security Rules (Important!)
+### 4. Firestore Security Rules
 
-For production, update your Firestore security rules. In Firebase Console:
-- Go to Firestore Database > Rules
-- Replace with:
-
+**Development Rules** (Firestore Database > Rules):
 ```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read/write access to all documents for now
-    // TODO: Add proper authentication and authorization
     match /{document=**} {
       allow read, write: if true;
     }
@@ -90,143 +178,371 @@ service cloud.firestore {
 }
 ```
 
-**Note**: This allows anyone to read/write. For production, implement proper authentication!
+**Production Rules** (recommended):
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Public read access
+    match /{document=**} {
+      allow read: if true;
+    }
 
-### 5. Start the Development Server
+    // Write access requires authentication
+    match /tournaments/{tournamentId} {
+      allow write: if request.auth != null;
+    }
 
+    match /players/{playerId} {
+      allow write: if request.auth != null;
+    }
+
+    match /courses/{courseId} {
+      allow write: if request.auth != null;
+    }
+  }
+}
+```
+
+### 5. Start Development Server
 ```bash
 npm start
 ```
 
 The app will open at [http://localhost:3000](http://localhost:3000)
 
-## Initial Setup Workflow
+### 6. Initial Setup in App
 
-1. **Teams Setup**: Navigate to "Teams" - The default teams (Tawa Lads and Rest of World) are already created
-2. **Add Players**: Add players to each team with their handicaps
-3. **Course Setup**: Navigate to "Course" and configure your 18 holes (default values are provided)
-4. **Create Matches**: Navigate to "Matches" and create your tournament matches
-5. **Start Scoring**: Begin scoring matches from the Matches page or Leaderboard
-6. **View Results**: Check the real-time leaderboard for tournament standings
+1. **Player Login**: Navigate to Player Login (no password required initially)
+2. **Admin Login** (optional): Use admin credentials for management features
+3. **Create Players**: Add players with handicaps
+4. **Create Course**: Add courses to the course library
+5. **Create Tournament**: Set up your first tournament with rounds
+6. **Start Scoring**: Begin scoring from the tournament detail page
 
-## Firestore Data Structure
+## 📊 Firestore Data Structure
 
 ```
-tournament/
-  current: { name, startDate, status }
-
-teams/
-  team1: { name: "Tawa Lads", color: "#DC2626", points, order }
-  team2: { name: "Rest of World", color: "#2563EB", points, order }
+tournaments/
+  {tournamentId}: {
+    name: string
+    startDate: timestamp
+    endDate: timestamp
+    status: 'draft' | 'in-progress' | 'completed'
+    type: 'ryder-cup' | 'individual'
+    edition: number
+    seriesId?: string
+    teams?: [{id, name, color, players}]
+    rounds: [{
+      id: string
+      name: string
+      format: 'individual' | 'individual_stableford' | 'best_ball' |
+              'scramble' | 'shamble' | 'team_stableford'
+      courseData: {holes: [...]}
+      matchPairings?: [...]
+      status: 'not-started' | 'in-progress' | 'completed'
+    }]
+  }
 
 players/
-  {playerId}: { name, handicap, teamId }
+  {playerId}: {
+    name: string
+    handicap: number
+    teamId?: string
+    isRegular: boolean
+    photoURL?: string
+  }
 
-course/
-  current: { name, totalPar, holesCount }
+courses/
+  {courseId}: {
+    name: string
+    tee: string
+    holes: [{
+      number: number
+      par: number
+      strokeIndex: number
+      distance?: number
+    }]
+  }
 
-holes/
-  hole1-hole18: { number, par, strokeIndex }
+series/
+  {seriesId}: {
+    name: string
+    startDate: timestamp
+    endDate: timestamp
+    tournamentIds: string[]
+    status: 'active' | 'completed'
+  }
 
-matches/
-  {matchId}: {
-    name,
-    format: "singles" | "foursomes" | "fourball",
-    team1Players: [playerIds],
-    team2Players: [playerIds],
-    holeScores: [{...}],
-    currentHole,
-    status,
-    result
+scorecards/
+  {scorecardId}: {
+    tournamentId: string
+    roundId: string
+    playerId: string
+    scores: [{holeNumber, grossScore, netScore, points}]
+    totalGross: number
+    totalNet: number
+    totalPoints: number
+    completed: boolean
+  }
+
+honours/
+  {year}: {
+    tournaments: [{
+      name: string
+      winners: [...]
+      date: timestamp
+    }]
   }
 ```
 
-## Match Formats
+## 🎮 Using the App
 
-### Singles
-- 1v1 individual match play
-- Each player's net score compared per hole
-- Winner takes the hole, or it's halved
+### Creating a Tournament
 
-### Foursomes (Alternate Shot)
-- 2v2 with teams alternating shots
-- One ball per team
-- Average team handicap applied
+1. **Navigate to Tournaments** → "Create New Tournament"
+2. **Configure Tournament**:
+   - Choose type (Individual or Ryder Cup)
+   - Set name, dates, and series (optional)
+   - Select teams and players (for Ryder Cup)
+3. **Add Rounds**:
+   - Click "Add Round"
+   - Choose format and course
+   - Configure format-specific settings
+4. **Set Up Matches** (team formats):
+   - Configure team pairings
+   - Set match order
+5. **Start Tournament**
 
-### Four-ball (Best Ball)
-- 2v2 with each player playing their own ball
-- Best net score per team wins the hole
-- Individual handicaps applied
+### Scoring a Round
 
-## Scoring System
+1. **Navigate to Tournament** → Select Round
+2. **Choose Match/Player** to score
+3. **Enter Scores**:
+   - Use +/- buttons or type scores directly
+   - Swipe left/right to navigate holes (mobile)
+   - Auto-save preserves progress
+4. **Submit** when complete
 
-- Match play format (holes won/lost)
-- Completed match = 1 point
-- Halved match = 0.5 points each
-- Automatic handicap adjustments based on stroke index
-- Match ends when result is mathematically certain
+### Viewing Results
 
-## Deployment
+- **Tournament Detail**: Overall standings and round results
+- **Leaderboard**: Real-time tournament rankings
+- **Analytics**: Hole difficulty and score distribution
+- **Player Statistics**: Individual performance metrics
+- **Series Leaderboard**: Season-long standings
 
-### Firebase Hosting
+## 📱 Mobile Usage
 
-1. Install Firebase CLI:
+### Installing as PWA
+1. Open app in mobile browser
+2. Look for "Install App" prompt or
+3. Use browser's "Add to Home Screen" option
+
+### Offline Mode
+- App caches essential data
+- Scores save locally when offline
+- Syncs automatically when connection restored
+
+### Mobile Features
+- **Swipe Navigation**: Swipe left/right between holes
+- **Pull to Refresh**: Pull down to refresh data
+- **Bottom Sheets**: Native-style modals
+- **Optimized Performance**: Code splitting for fast loads
+
+## 🚀 Deployment
+
+### Building for Production
+```bash
+npm run build
+```
+
+### Deploy to Firebase Hosting
+
+1. **Install Firebase CLI**:
    ```bash
    npm install -g firebase-tools
    ```
 
-2. Login to Firebase:
+2. **Login**:
    ```bash
    firebase login
    ```
 
-3. Initialize Firebase:
+3. **Initialize** (first time only):
    ```bash
-   firebase init
+   firebase init hosting
    ```
-   - Select "Hosting"
-   - Choose your project
-   - Set build directory to `build`
+   - Choose your Firebase project
+   - Set public directory to: `build`
    - Configure as single-page app: Yes
+   - Set up automatic builds: No
 
-4. Build and deploy:
+4. **Deploy**:
    ```bash
    npm run build
-   firebase deploy
+   firebase deploy --only hosting
    ```
 
-## Customization
+5. **Your app is live!**
+   - URL: `https://your-project-id.web.app`
 
-### Team Colors
-Edit in `src/firebase/services.js` in the `initializeDefaultData` function:
-```javascript
-color: '#DC2626' // Red for Tawa Lads
-color: '#2563EB' // Blue for Rest of World
+### Continuous Deployment (Optional)
+
+Set up GitHub Actions for automatic deployment on push:
+
+```yaml
+# .github/workflows/firebase-hosting.yml
+name: Deploy to Firebase Hosting
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - run: npm install
+      - run: npm run build
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          channelId: live
+          projectId: your-project-id
 ```
 
-### Course Setup
-Default course includes standard par values and stroke indexes. Modify through the Course Setup page in the app.
+## 🧪 Testing
 
-## Troubleshooting
+### Run Tests
+```bash
+npm test
+```
+
+### Run Tests Once (CI)
+```bash
+npm run test:once
+```
+
+### Coverage Report
+```bash
+npm run test:coverage
+```
+
+## 🔧 Troubleshooting
 
 ### Firebase Connection Issues
-- Verify `.env` file has correct configuration
-- Check Firebase project is active
-- Ensure Firestore is enabled in Firebase Console
+- Verify `.env` file exists with correct values
+- Check Firebase project is active in console
+- Ensure Firestore and Storage are enabled
+- Verify security rules allow access
 
 ### Build Errors
-- Clear node_modules and reinstall: `rm -rf node_modules && npm install`
+- Clear cache: `rm -rf node_modules package-lock.json && npm install`
 - Check Node version: `node --version` (should be v14+)
+- Clear build folder: `rm -rf build`
 
 ### Real-time Updates Not Working
 - Check Firestore security rules
 - Verify network connection
 - Check browser console for errors
+- Ensure subscriptions are properly set up
 
-## License
+### PWA Not Installing
+- Must be served over HTTPS (or localhost)
+- Check `manifest.json` is accessible
+- Verify service worker is registered
+- Check browser console for errors
 
-MIT
+### Scores Not Saving
+- Check browser console for errors
+- Verify Firebase authentication status
+- Ensure proper write permissions in Firestore rules
+- Check network connectivity
 
-## Support
+## 🛠️ Development
 
-For issues or questions, please create an issue in the repository.
+### Available Scripts
+
+- `npm start` - Start development server
+- `npm run build` - Build for production
+- `npm test` - Run tests in watch mode
+- `npm run test:once` - Run tests once
+- `npm run test:coverage` - Generate coverage report
+- `npm run eject` - Eject from Create React App (irreversible)
+
+### Code Style
+
+The project uses ESLint with React defaults. To check for issues:
+```bash
+npx eslint src/
+```
+
+### Adding New Features
+
+1. Create feature branch: `git checkout -b feature/new-feature`
+2. Implement feature with tests
+3. Update documentation
+4. Submit pull request
+
+## 📝 API Documentation
+
+### Firebase Services
+
+Key service files:
+- `src/firebase/services.js` - Core Firestore operations
+- `src/firebase/tournamentServices.js` - Tournament management
+- `src/firebase/mediaServices.js` - Image upload/management
+- `src/firebase/config.js` - Firebase configuration
+
+### Custom Hooks
+
+- `useAutoSave(data, onSave)` - Auto-save with debouncing
+- `useTournamentRound(tournamentId, roundId)` - Tournament data subscription
+- `useSwipeGestures(onLeft, onRight)` - Touch gesture detection
+- `useMobileOptimizations()` - PWA features (pull-to-refresh, install prompt)
+
+### Utility Functions
+
+- `calculateStablefordPoints()` - Stableford scoring
+- `calculateStrokesReceived()` - Handicap calculations
+- `calculateScrambleTeamHandicap()` - Team handicap formulas
+- `calculatePlayerStatistics()` - Player performance metrics
+- `calculateTournamentAnalytics()` - Tournament insights
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with tests
+4. Update documentation
+5. Submit a pull request
+
+## 📄 License
+
+MIT License - See LICENSE file for details
+
+## 👤 Author
+
+**Evan Wilson**
+
+## 🙏 Acknowledgments
+
+Built with Create React App and Firebase
+Icons by Heroicons
+
+## 📞 Support
+
+For issues, questions, or feature requests:
+- Create an issue in the repository
+- Check existing documentation
+- Review troubleshooting guide above
+
+---
+
+**Enjoy your tournaments! ⛳🏆**

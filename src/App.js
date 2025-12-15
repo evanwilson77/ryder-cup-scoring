@@ -1,42 +1,44 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom';
 import './App.css';
 import { initializeDefaultData } from './firebase/services';
 import { initializeRegularPlayers } from './utils/initializePlayers';
 import { initializeTournamentSeries } from './firebase/tournamentServices';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import CourseSetup from './components/CourseSetup';
-import MatchSetup from './components/MatchSetup';
-import Leaderboard from './components/Leaderboard';
-import Scoring from './components/Scoring';
-import MatchDetail from './components/MatchDetail';
-import PlayerManagement from './components/PlayerManagement';
-import AdminLogin from './components/AdminLogin';
-import PlayerLogin from './components/PlayerLogin';
-import TournamentDashboard from './components/TournamentDashboard';
-import TournamentCreation from './components/TournamentCreation';
-import TournamentDetail from './components/TournamentDetail';
-import ScorecardScoring from './components/ScorecardScoring';
-import StablefordScoring from './components/StablefordScoring';
-import BestBallScoring from './components/BestBallScoring';
-import ScrambleScoring from './components/ScrambleScoring';
-import ShambleScoring from './components/ShambleScoring';
-import CourseLibrary from './components/CourseLibrary';
-import SeriesLeaderboard from './components/SeriesLeaderboard';
-import SeriesDashboard from './components/SeriesDashboard';
-import SeriesManagement from './components/SeriesManagement';
-import HonoursBoard from './components/HonoursBoard';
-import HonoursBoardAdmin from './components/HonoursBoardAdmin';
-import Help from './components/Help';
-import PlayerMigration from './components/PlayerMigration';
-import AnomalyLogs from './components/AnomalyLogs';
-import PlayerStatistics from './components/PlayerStatistics';
-import TournamentAnalytics from './components/TournamentAnalytics';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import PullToRefresh from './components/PullToRefresh';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
 import { useMobileOptimizations, usePerformanceMonitor } from './hooks/useMobileOptimizations';
+
+// Lazy-loaded route components for code splitting
+const CourseSetup = lazy(() => import('./components/CourseSetup'));
+const MatchSetup = lazy(() => import('./components/MatchSetup'));
+const Leaderboard = lazy(() => import('./components/Leaderboard'));
+const Scoring = lazy(() => import('./components/Scoring'));
+const MatchDetail = lazy(() => import('./components/MatchDetail'));
+const PlayerManagement = lazy(() => import('./components/PlayerManagement'));
+const AdminLogin = lazy(() => import('./components/AdminLogin'));
+const PlayerLogin = lazy(() => import('./components/PlayerLogin'));
+const TournamentDashboard = lazy(() => import('./components/TournamentDashboard'));
+const TournamentCreation = lazy(() => import('./components/TournamentCreation'));
+const TournamentDetail = lazy(() => import('./components/TournamentDetail'));
+const ScorecardScoring = lazy(() => import('./components/ScorecardScoring'));
+const StablefordScoring = lazy(() => import('./components/StablefordScoring'));
+const BestBallScoring = lazy(() => import('./components/BestBallScoring'));
+const ScrambleScoring = lazy(() => import('./components/ScrambleScoring'));
+const ShambleScoring = lazy(() => import('./components/ShambleScoring'));
+const CourseLibrary = lazy(() => import('./components/CourseLibrary'));
+const SeriesLeaderboard = lazy(() => import('./components/SeriesLeaderboard'));
+const SeriesDashboard = lazy(() => import('./components/SeriesDashboard'));
+const SeriesManagement = lazy(() => import('./components/SeriesManagement'));
+const HonoursBoard = lazy(() => import('./components/HonoursBoard'));
+const HonoursBoardAdmin = lazy(() => import('./components/HonoursBoardAdmin'));
+const Help = lazy(() => import('./components/Help'));
+const PlayerMigration = lazy(() => import('./components/PlayerMigration'));
+const AnomalyLogs = lazy(() => import('./components/AnomalyLogs'));
+const PlayerStatistics = lazy(() => import('./components/PlayerStatistics'));
+const TournamentAnalytics = lazy(() => import('./components/TournamentAnalytics'));
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -195,10 +197,16 @@ function AppContent() {
       {currentUser && !isLoginPage && <AppHeader />}
 
       <main className="App-main">
-        <Routes>
-          {/* Public routes */}
-          <Route path="/player-login" element={<PlayerLogin />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
+        <Suspense fallback={
+          <div className="App loading">
+            <div className="spinner"></div>
+            <p>Loading...</p>
+          </div>
+        }>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/player-login" element={<PlayerLogin />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
 
           {/* Protected routes - require authentication */}
           <Route path="/" element={<ProtectedRoute><Navigate to="/tournaments" replace /></ProtectedRoute>} />
@@ -228,7 +236,8 @@ function AppContent() {
           <Route path="/scoring/:matchId" element={<ProtectedRoute><Scoring /></ProtectedRoute>} />
           <Route path="/match/:matchId" element={<ProtectedRoute><MatchDetail /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<ProtectedRoute><ErrorBoundary><Leaderboard /></ErrorBoundary></ProtectedRoute>} />
-        </Routes>
+          </Routes>
+        </Suspense>
       </main>
 
       {/* PWA Install Prompt */}

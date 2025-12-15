@@ -6,6 +6,7 @@ import { subscribeToPlayers } from '../firebase/services';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { calculateStablefordPoints, calculateStrokesReceived } from '../utils/stablefordCalculations';
 import { useAutoSave, useScoreEntry, useTournamentRound } from '../hooks';
+import { useSwipeGestures } from '../hooks/useSwipeGestures';
 import { useToast } from './Toast';
 import {
   AutoSaveIndicator,
@@ -30,6 +31,21 @@ function BestBallScoring() {
   // Custom hooks
   const currentHoleData = round?.courseData?.holes?.[currentHole];
   const { increment, decrement } = useScoreEntry(currentHoleData?.par || 4);
+
+  // Swipe gesture handlers for hole navigation
+  const handleSwipeLeft = useCallback(() => {
+    if (currentHole < 17) {
+      setCurrentHole(currentHole + 1);
+    }
+  }, [currentHole]);
+
+  const handleSwipeRight = useCallback(() => {
+    if (currentHole > 0) {
+      setCurrentHole(currentHole - 1);
+    }
+  }, [currentHole]);
+
+  const swipeHandlers = useSwipeGestures(handleSwipeLeft, handleSwipeRight);
 
   // Helper to remove undefined values (Firebase doesn't accept them)
   const cleanUndefined = (obj) => {
@@ -380,7 +396,7 @@ function BestBallScoring() {
   }
 
   return (
-    <div className="best-ball-scoring">
+    <div className="best-ball-scoring" {...swipeHandlers}>
       <div className="scoring-container">
         {/* Header */}
         <div className="scoring-header">

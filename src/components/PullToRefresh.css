@@ -1,0 +1,153 @@
+/* Pull to Refresh - Enhanced with visual feedback */
+
+.pull-to-refresh {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  z-index: 9998;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+  padding: 1rem 1.5rem;
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pull-to-refresh.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.pull-to-refresh-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Progress circle container */
+.progress-circle {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* SVG progress ring */
+.progress-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: rotate(-90deg);
+}
+
+.progress-ring-circle {
+  color: rgba(255, 255, 255, 0.3);
+  transition: stroke-dashoffset 0.2s ease;
+}
+
+.pull-to-refresh.ready .progress-ring-circle {
+  color: #4ade80;
+  stroke-width: 4;
+}
+
+/* Refresh icon */
+.refresh-icon {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  color: white;
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.refresh-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.pull-to-refresh.ready .refresh-icon {
+  color: #4ade80;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Text indicator */
+.pull-to-refresh-text {
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.pull-to-refresh.ready .pull-to-refresh-text {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+/* Animation when appearing */
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.pull-to-refresh.visible {
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Desktop - hide on larger screens since pull-to-refresh is mobile-only */
+@media (min-width: 768px) {
+  .pull-to-refresh {
+    display: none;
+  }
+}
+
+/* Refreshing state (when refresh is triggered) */
+.pull-to-refresh.refreshing .refresh-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pull-to-refresh.refreshing .progress-ring-circle {
+  color: #4ade80;
+  animation: progressPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes progressPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

@@ -1,0 +1,218 @@
+/* Bottom Sheet - Mobile-friendly modal */
+
+.bottom-sheet-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.bottom-sheet {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.bottom-sheet.open {
+  transform: translateY(0);
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Drag handle */
+.bottom-sheet-handle {
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+}
+
+.bottom-sheet-handle:active {
+  cursor: grabbing;
+}
+
+.handle-bar {
+  width: 40px;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+/* Header */
+.bottom-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bottom-sheet-header h2 {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.bottom-sheet-header .close-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bottom-sheet-header .close-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.bottom-sheet-header .close-button .icon {
+  width: 20px;
+  height: 20px;
+  color: white;
+}
+
+/* Content */
+.bottom-sheet-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Scrollbar styling for content */
+.bottom-sheet-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.bottom-sheet-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.bottom-sheet-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.bottom-sheet-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Desktop view - center the sheet and give it max width */
+@media (min-width: 768px) {
+  .bottom-sheet-backdrop {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bottom-sheet {
+    border-radius: 16px;
+    max-width: 600px;
+    max-height: 80vh !important;
+  }
+
+  .bottom-sheet.open {
+    animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Hide drag handle on desktop */
+  .bottom-sheet-handle {
+    display: none;
+  }
+
+  .bottom-sheet-header {
+    padding-top: 20px;
+  }
+}
+
+/* Prevent text selection during drag */
+.bottom-sheet.dragging {
+  user-select: none;
+}
+
+/* Smooth transition when releasing drag */
+.bottom-sheet:not(.dragging) {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Content styling helpers */
+.bottom-sheet-content p {
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.bottom-sheet-content ul,
+.bottom-sheet-content ol {
+  color: rgba(255, 255, 255, 0.9);
+  padding-left: 20px;
+  margin-bottom: 12px;
+}
+
+.bottom-sheet-content li {
+  margin-bottom: 8px;
+}
+
+.bottom-sheet-content .button {
+  margin-top: 12px;
+}
+
+/* Action buttons in bottom sheet */
+.bottom-sheet-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bottom-sheet-actions button {
+  flex: 1;
+}

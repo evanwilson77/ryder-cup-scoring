@@ -10,6 +10,7 @@ import {
   ScrambleDriveTracker
 } from '../utils/scrambleCalculations';
 import { useAutoSave, useScoreEntry, useTournamentRound } from '../hooks';
+import { useSwipeGestures } from '../hooks/useSwipeGestures';
 import { useToast } from './Toast';
 import {
   AutoSaveIndicator,
@@ -286,6 +287,21 @@ function ScrambleScoring() {
     triggerAutoSave(scores, newSelections);
   }, [driveSelections, driveTracker, round?.scrambleConfig, teamPlayers, scores, triggerAutoSave]);
 
+  // Swipe gesture handlers for hole navigation
+  const handleSwipeLeft = useCallback(() => {
+    if (currentHole < 17) {
+      setCurrentHole(currentHole + 1);
+    }
+  }, [currentHole]);
+
+  const handleSwipeRight = useCallback(() => {
+    if (currentHole > 0) {
+      setCurrentHole(currentHole - 1);
+    }
+  }, [currentHole]);
+
+  const swipeHandlers = useSwipeGestures(handleSwipeLeft, handleSwipeRight);
+
   const calculateNetScore = (grossScore, holeStrokeIndex) => {
     if (!grossScore) return null;
     const strokesReceived = calculateTeamStrokesReceived(teamHandicap, holeStrokeIndex);
@@ -440,7 +456,7 @@ function ScrambleScoring() {
   const config = round?.scrambleConfig || {};
 
   return (
-    <div className="scramble-scoring">
+    <div className="scramble-scoring" {...swipeHandlers}>
       <div className="scoring-container">
         {/* Header */}
         <div className="scoring-header">

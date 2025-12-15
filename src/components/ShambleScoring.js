@@ -7,6 +7,7 @@ import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { calculateStablefordPoints, calculateStrokesReceived } from '../utils/stablefordCalculations';
 import { ScrambleDriveTracker } from '../utils/scrambleCalculations';
 import { useAutoSave, useScoreEntry, useTournamentRound } from '../hooks';
+import { useSwipeGestures } from '../hooks/useSwipeGestures';
 import { useToast } from './Toast';
 import {
   AutoSaveIndicator,
@@ -293,6 +294,21 @@ function ShambleScoring() {
     triggerAutoSave(playerScores, newSelections);
   }, [driveSelections, driveTracker, round?.shambleConfig, teamPlayers, playerScores, triggerAutoSave]);
 
+  // Swipe gesture handlers for hole navigation
+  const handleSwipeLeft = useCallback(() => {
+    if (currentHole < 17) {
+      setCurrentHole(currentHole + 1);
+    }
+  }, [currentHole]);
+
+  const handleSwipeRight = useCallback(() => {
+    if (currentHole > 0) {
+      setCurrentHole(currentHole - 1);
+    }
+  }, [currentHole]);
+
+  const swipeHandlers = useSwipeGestures(handleSwipeLeft, handleSwipeRight);
+
   const calculateBestScoreWithScores = (holeIndex, scores) => {
     const holeData = round?.courseData?.holes?.[holeIndex];
     if (!holeData) return null;
@@ -502,7 +518,7 @@ function ShambleScoring() {
   const config = round?.shambleConfig || {};
 
   return (
-    <div className="shamble-scoring">
+    <div className="shamble-scoring" {...swipeHandlers}>
       <div className="scoring-container">
         {/* Header */}
         <div className="scoring-header">
