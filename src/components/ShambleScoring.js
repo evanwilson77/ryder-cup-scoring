@@ -220,24 +220,23 @@ function ShambleScoring() {
       ).filter(Boolean);
       setTeamPlayers(foundTeamPlayers);
 
-      // Initialize drive tracker if configured
+      // Initialize drive tracker (always required for Shamble format)
       const config = round?.shambleConfig || {};
-      if (config.enforceDriveRequirements) {
-        const tracker = new ScrambleDriveTracker(
-          foundTeamPlayers,
-          config.minDrivesPerPlayer || 3,
-          18
-        );
+      const minDrivesRequired = config.minDrivesPerPlayer || 3;
+      const tracker = new ScrambleDriveTracker(
+        foundTeamPlayers,
+        minDrivesRequired,
+        18
+      );
 
-        // Restore saved drive selections
-        driveSelections.forEach((selectedPlayerId) => {
-          if (selectedPlayerId) {
-            tracker.recordDriveUsed(selectedPlayerId);
-          }
-        });
+      // Restore saved drive selections
+      driveSelections.forEach((selectedPlayerId) => {
+        if (selectedPlayerId) {
+          tracker.recordDriveUsed(selectedPlayerId);
+        }
+      });
 
-        setDriveTracker(tracker);
-      }
+      setDriveTracker(tracker);
     }
   }, [team, players, round, driveSelections]);
 
@@ -389,9 +388,8 @@ function ShambleScoring() {
   };
 
   const handleSubmit = async () => {
-    // Validate drive requirements if enforced
-    const config = round?.shambleConfig || {};
-    if (config.enforceDriveRequirements && driveTracker) {
+    // Validate drive requirements (always required for Shamble format)
+    if (driveTracker) {
       const validation = driveTracker.validate();
       if (!validation.isValid) {
         const message = validation.violations.map(v =>
@@ -558,7 +556,8 @@ function ShambleScoring() {
             <div className="drive-options">
               {teamPlayers.map(player => {
                 const status = driveTracker?.getPlayerStatus(player.id, currentHole + 1);
-                const needsMore = status && config.enforceDriveRequirements && !status.isCompliant && status.warning;
+                const needsMore = status && !status.isCompliant && status.warning;
+                const minDrives = config.minDrivesPerPlayer || 3;
 
                 return (
                   <label
@@ -575,9 +574,9 @@ function ShambleScoring() {
                     <div className="drive-option-content">
                       <span className="player-name">{player.name}</span>
                       {needsMore && <span className="warning-badge">⚠️ Needs drives</span>}
-                      {driveTracker && config.enforceDriveRequirements && (
+                      {driveTracker && (
                         <span className="drive-count-badge">
-                          {status.used}/{config.minDrivesPerPlayer}
+                          {status.used}/{minDrives}
                         </span>
                       )}
                     </div>
@@ -762,13 +761,14 @@ function ShambleScoring() {
         </div>
 
         {/* Drive Totals */}
-        {config.enforceDriveRequirements && driveTracker && (
+        {driveTracker && (
           <div className="card drive-totals-section">
             <h3>Drive Usage Summary</h3>
             <div className="drive-totals-grid">
               {teamPlayers.map(player => {
                 const status = driveTracker.getPlayerStatus(player.id, 18);
-                const isCompliant = status.used >= config.minDrivesPerPlayer;
+                const minDrives = config.minDrivesPerPlayer || 3;
+                const isCompliant = status.used >= minDrives;
                 return (
                   <div key={player.id} className={`drive-total-item ${isCompliant ? 'compliant' : 'needs-more'}`}>
                     <div className="drive-total-player">
@@ -778,7 +778,7 @@ function ShambleScoring() {
                     <div className="drive-total-count">
                       <span className="drives-used">{status.used}</span>
                       <span className="drives-separator">/</span>
-                      <span className="drives-required">{config.minDrivesPerPlayer}</span>
+                      <span className="drives-required">{minDrives}</span>
                       <span className="drives-label">drives</span>
                     </div>
                   </div>

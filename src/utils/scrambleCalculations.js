@@ -166,8 +166,7 @@ export class ScrambleDriveTracker {
       remaining: usage.remaining,
       holesLeft: holesRemaining,
       isCompliant: usage.used >= usage.required,
-      warning: usage.remaining > holesRemaining,
-      message: this.getStatusMessage(playerId, currentHole)
+      warning: usage.remaining > holesRemaining
     };
   }
 
@@ -175,17 +174,20 @@ export class ScrambleDriveTracker {
    * Get status message for a player
    */
   getStatusMessage(playerId, currentHole) {
-    const status = this.getPlayerStatus(playerId, currentHole);
+    const usage = this.driveUsage[playerId];
+    const holesRemaining = this.totalHoles - currentHole;
+    const isCompliant = usage.used >= usage.required;
+    const warning = usage.remaining > holesRemaining;
     const player = this.players.find(p => p.id === playerId);
 
     if (!player) return '';
 
-    if (status.isCompliant) {
-      return `✓ ${player.name} has met minimum (${status.used}/${status.required})`;
-    } else if (status.warning) {
-      return `⚠️ ${player.name} needs ${status.remaining} more drive${status.remaining > 1 ? 's' : ''} (${status.holesLeft} holes left)`;
+    if (isCompliant) {
+      return `✓ ${player.name} has met minimum (${usage.used}/${usage.required})`;
+    } else if (warning) {
+      return `⚠️ ${player.name} needs ${usage.remaining} more drive${usage.remaining > 1 ? 's' : ''} (${holesRemaining} holes left)`;
     } else {
-      return `${player.name} needs ${status.remaining} more drive${status.remaining > 1 ? 's' : ''}`;
+      return `${player.name} needs ${usage.remaining} more drive${usage.remaining > 1 ? 's' : ''}`;
     }
   }
 

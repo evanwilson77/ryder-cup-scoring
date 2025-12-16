@@ -2,6 +2,14 @@
   font-size: 0.875rem;
   color: #667eea;
   font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  min-height: 1.25rem; /* Reserve space to prevent layout shift */
+  display: inline-block;
+}
+
+.auto-save-indicator.is-saving {
+  opacity: 1;
   animation: pulse 1.5s ease-in-out infinite;
 }
 

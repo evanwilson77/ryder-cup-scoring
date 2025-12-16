@@ -6,9 +6,8 @@ import {
   TrophyIcon,
   CalendarIcon,
   PhotoIcon,
-  ChartBarIcon,
-  UserGroupIcon,
-  ClockIcon
+  ClockIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 import './SeriesDashboard.css';
 
@@ -162,22 +161,19 @@ function SeriesDashboard() {
             </button>
 
             <button
-              onClick={() => navigate(`/series/${seriesId}`)}
-              className="action-card leaderboard"
-            >
-              <div className="action-icon">
-                <ChartBarIcon className="icon" />
-              </div>
-              <div className="action-content">
-                <h3>Series Leaderboard</h3>
-                <p>Current standings and points</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => alert('Photo gallery coming in Phase 7!')}
+              onClick={() => {
+                // Navigate to most recent tournament's media gallery
+                if (tournaments.length > 0) {
+                  const sortedTournaments = [...tournaments].sort((a, b) =>
+                    new Date(b.startDate) - new Date(a.startDate)
+                  );
+                  navigate(`/tournaments/${sortedTournaments[0].id}#media`);
+                } else {
+                  alert('No tournaments in this series yet');
+                }
+              }}
               className="action-card photos"
-              disabled
+              disabled={tournaments.length === 0}
             >
               <div className="action-icon">
                 <PhotoIcon className="icon" />
@@ -185,19 +181,6 @@ function SeriesDashboard() {
               <div className="action-content">
                 <h3>Photo Gallery</h3>
                 <p>Browse tournament photos</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => navigate('/players')}
-              className="action-card players"
-            >
-              <div className="action-icon">
-                <UserGroupIcon className="icon" />
-              </div>
-              <div className="action-content">
-                <h3>Players</h3>
-                <p>View all series participants</p>
               </div>
             </button>
           </div>

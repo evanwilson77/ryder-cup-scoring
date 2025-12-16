@@ -11,13 +11,9 @@ import './AutoSaveIndicator.css';
  * @param {string} className - Additional CSS classes
  */
 function AutoSaveIndicator({ isSaving, text = 'Saving...', className = '' }) {
-  if (!isSaving) {
-    return null;
-  }
-
   return (
-    <span className={`auto-save-indicator ${className}`}>
-      {text}
+    <span className={`auto-save-indicator ${isSaving ? 'is-saving' : ''} ${className}`}>
+      {isSaving ? text : '\u00A0'}
     </span>
   );
 }

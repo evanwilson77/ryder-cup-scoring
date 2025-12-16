@@ -214,23 +214,22 @@ function ScrambleScoring() {
       );
       setTeamHandicap(calculatedHandicap);
 
-      // Initialize drive tracker
-      if (config.enforceDriveRequirements) {
-        const tracker = new ScrambleDriveTracker(
-          foundTeamPlayers,
-          config.minDrivesPerPlayer || 3,
-          18
-        );
+      // Initialize drive tracker (always required for Scramble format)
+      const minDrivesRequired = config.minDrivesPerPlayer || 3;
+      const tracker = new ScrambleDriveTracker(
+        foundTeamPlayers,
+        minDrivesRequired,
+        18
+      );
 
-        // Restore saved drive selections
-        driveSelections.forEach((selectedPlayerId, index) => {
-          if (selectedPlayerId) {
-            tracker.recordDriveUsed(selectedPlayerId);
-          }
-        });
+      // Restore saved drive selections
+      driveSelections.forEach((selectedPlayerId, index) => {
+        if (selectedPlayerId) {
+          tracker.recordDriveUsed(selectedPlayerId);
+        }
+      });
 
-        setDriveTracker(tracker);
-      }
+      setDriveTracker(tracker);
     }
   }, [team, players, round, driveSelections]);
 
@@ -326,9 +325,8 @@ function ScrambleScoring() {
   };
 
   const handleSubmit = async () => {
-    // Validate drive requirements if enforced
-    const config = round?.scrambleConfig || {};
-    if (config.enforceDriveRequirements && driveTracker) {
+    // Validate drive requirements (always required for Scramble format)
+    if (driveTracker) {
       const validation = driveTracker.validate();
       if (!validation.isValid) {
         const message = validation.violations.map(v =>
@@ -487,10 +485,10 @@ function ScrambleScoring() {
               <div key={player.id} className="player-info-card">
                 <div className="player-name">{player.name}</div>
                 <div className="player-handicap">HCP {player.handicap?.toFixed(1)}</div>
-                {driveTracker && config.enforceDriveRequirements && (
+                {driveTracker && (
                   <div className="drive-count">
                     {driveTracker.getPlayerStatus(player.id, currentHole + 1).used}/
-                    {config.minDrivesPerPlayer} drives
+                    {config.minDrivesPerPlayer || 3} drives
                   </div>
                 )}
               </div>
@@ -509,42 +507,41 @@ function ScrambleScoring() {
           />
 
           {/* Drive Selection */}
-          {config.enforceDriveRequirements && (
-            <div className="drive-selection-section">
-              <h3>Select Best Drive</h3>
-              <div className="drive-options">
-                {teamPlayers.map(player => {
-                  const status = driveTracker?.getPlayerStatus(player.id, currentHole + 1);
-                  const needsMore = status && !status.isCompliant && status.warning;
+          <div className="drive-selection-section">
+            <h3>Select Best Drive</h3>
+            <div className="drive-options">
+              {teamPlayers.map(player => {
+                const status = driveTracker?.getPlayerStatus(player.id, currentHole + 1);
+                const needsMore = status && !status.isCompliant && status.warning;
+                const minDrives = config.minDrivesPerPlayer || 3;
 
-                  return (
-                    <label
-                      key={player.id}
-                      className={`drive-option ${currentDriveSelection === player.id ? 'selected' : ''} ${needsMore ? 'needs-drive' : ''}`}
-                    >
-                      <input
-                        type="radio"
-                        name={`drive-hole-${currentHole}`}
-                        value={player.id}
-                        checked={currentDriveSelection === player.id}
-                        onChange={() => handleDriveSelection(currentHole, player.id)}
-                      />
-                      <div className="drive-option-content">
-                        <span className="player-name">{player.name}</span>
-                        {needsMore && <span className="warning-badge">⚠️ Needs drives</span>}
-                        <span className="drive-count-badge">
-                          {status?.used || 0}/{config.minDrivesPerPlayer}
-                        </span>
-                      </div>
-                      {currentDriveSelection === player.id && (
-                        <CheckIcon className="selected-icon" />
-                      )}
-                    </label>
-                  );
-                })}
-              </div>
+                return (
+                  <label
+                    key={player.id}
+                    className={`drive-option ${currentDriveSelection === player.id ? 'selected' : ''} ${needsMore ? 'needs-drive' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name={`drive-hole-${currentHole}`}
+                      value={player.id}
+                      checked={currentDriveSelection === player.id}
+                      onChange={() => handleDriveSelection(currentHole, player.id)}
+                    />
+                    <div className="drive-option-content">
+                      <span className="player-name">{player.name}</span>
+                      {needsMore && <span className="warning-badge">⚠️ Needs drives</span>}
+                      <span className="drive-count-badge">
+                        {status?.used || 0}/{minDrives}
+                      </span>
+                    </div>
+                    {currentDriveSelection === player.id && (
+                      <CheckIcon className="selected-icon" />
+                    )}
+                  </label>
+                );
+              })}
             </div>
-          )}
+          </div>
 
           {/* Score Entry */}
           <ScoreEntry
@@ -642,13 +639,14 @@ function ScrambleScoring() {
         </div>
 
         {/* Drive Totals */}
-        {config.enforceDriveRequirements && driveTracker && (
+        {driveTracker && (
           <div className="card drive-totals-section">
             <h3>Drive Usage Summary</h3>
             <div className="drive-totals-grid">
               {teamPlayers.map(player => {
                 const status = driveTracker.getPlayerStatus(player.id, 18);
-                const isCompliant = status.used >= config.minDrivesPerPlayer;
+                const minDrives = config.minDrivesPerPlayer || 3;
+                const isCompliant = status.used >= minDrives;
                 return (
                   <div key={player.id} className={`drive-total-item ${isCompliant ? 'compliant' : 'needs-more'}`}>
                     <div className="drive-total-player">
@@ -658,7 +656,7 @@ function ScrambleScoring() {
                     <div className="drive-total-count">
                       <span className="drives-used">{status.used}</span>
                       <span className="drives-separator">/</span>
-                      <span className="drives-required">{config.minDrivesPerPlayer}</span>
+                      <span className="drives-required">{minDrives}</span>
                       <span className="drives-label">drives</span>
                     </div>
                   </div>
