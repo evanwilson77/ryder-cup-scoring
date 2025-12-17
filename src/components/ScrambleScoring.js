@@ -66,7 +66,8 @@ function ScrambleScoring() {
       const allHolesComplete = holesWithScores === updatedScores.length;
       const status = holesWithScores === 0 ? 'not_started' : (allHolesComplete ? 'completed' : 'in_progress');
 
-      const scorecard = {
+      // Clean the scorecard before saving to prevent undefined values
+      const scorecard = cleanUndefined({
         teamId: teamId,
         teamName: team.name,
         holes: updatedScores,
@@ -77,14 +78,21 @@ function ScrambleScoring() {
         status: status,
         currentHole: currentHole,
         updatedAt: new Date().toISOString()
-      };
+      });
 
       const roundIndex = tournament.rounds.findIndex(r => r.id === roundId);
-      const updatedRounds = [...tournament.rounds];
 
-      if (!updatedRounds[roundIndex].teamScorecards) {
-        updatedRounds[roundIndex].teamScorecards = [];
-      }
+      // Deep clone the rounds array to avoid undefined values from original data
+      const updatedRounds = tournament.rounds.map((r, idx) => {
+        if (idx === roundIndex) {
+          // Create a clean copy of the current round
+          return {
+            ...r,
+            teamScorecards: r.teamScorecards ? [...r.teamScorecards] : []
+          };
+        }
+        return r;
+      });
 
       const existingIndex = updatedRounds[roundIndex].teamScorecards.findIndex(
         sc => sc.teamId === teamId
@@ -133,7 +141,16 @@ function ScrambleScoring() {
         updatedAt: new Date().toISOString()
       });
 
-      await updateDoc(doc(db, 'tournaments', tournamentId), cleanedUpdate);
+      // Final safety check: Convert any remaining undefined to null
+      const safeUpdate = JSON.parse(JSON.stringify(cleanedUpdate, (key, value) => {
+        if (value === undefined) {
+          console.warn(`Converting undefined to null at key: ${key}`);
+          return null;
+        }
+        return value;
+      }));
+
+      await updateDoc(doc(db, 'tournaments', tournamentId), safeUpdate);
     } catch (error) {
       console.error('Error auto-saving:', error);
       toast.error('Failed to save changes');
@@ -341,11 +358,11 @@ function ScrambleScoring() {
 
     try {
       const roundIndex = tournament.rounds.findIndex(r => r.id === roundId);
-      const updatedRounds = [...tournament.rounds];
 
       const totalScore = calculateTotalScore();
 
-      const scorecard = {
+      // Clean the scorecard before saving to prevent undefined values
+      const scorecard = cleanUndefined({
         teamId: teamId,
         teamName: team.name,
         holes: scores,
@@ -355,12 +372,19 @@ function ScrambleScoring() {
         teamHandicap: teamHandicap,
         status: 'completed',
         completedAt: new Date().toISOString()
-      };
+      });
 
-      // Add or update team scorecard
-      if (!updatedRounds[roundIndex].teamScorecards) {
-        updatedRounds[roundIndex].teamScorecards = [];
-      }
+      // Deep clone the rounds array to avoid undefined values from original data
+      const updatedRounds = tournament.rounds.map((r, idx) => {
+        if (idx === roundIndex) {
+          // Create a clean copy of the current round
+          return {
+            ...r,
+            teamScorecards: r.teamScorecards ? [...r.teamScorecards] : []
+          };
+        }
+        return r;
+      });
 
       const existingIndex = updatedRounds[roundIndex].teamScorecards.findIndex(
         sc => sc.teamId === teamId
@@ -410,7 +434,16 @@ function ScrambleScoring() {
         updatedAt: new Date().toISOString()
       });
 
-      await updateDoc(doc(db, 'tournaments', tournamentId), cleanedUpdate);
+      // Final safety check: Convert any remaining undefined to null
+      const safeUpdate = JSON.parse(JSON.stringify(cleanedUpdate, (key, value) => {
+        if (value === undefined) {
+          console.warn(`Converting undefined to null at key: ${key}`);
+          return null;
+        }
+        return value;
+      }));
+
+      await updateDoc(doc(db, 'tournaments', tournamentId), safeUpdate);
 
       toast.success('Scramble scorecard submitted successfully!');
       navigate(`/tournaments/${tournamentId}`);
@@ -475,25 +508,6 @@ function ScrambleScoring() {
           </div>
 
           <AutoSaveIndicator isSaving={isSaving} />
-        </div>
-
-        {/* Team Players */}
-        <div className="team-players-info card">
-          <h3>Team Members</h3>
-          <div className="players-list">
-            {teamPlayers.map(player => (
-              <div key={player.id} className="player-info-card">
-                <div className="player-name">{player.name}</div>
-                <div className="player-handicap">HCP {player.handicap?.toFixed(1)}</div>
-                {driveTracker && (
-                  <div className="drive-count">
-                    {driveTracker.getPlayerStatus(player.id, currentHole + 1).used}/
-                    {config.minDrivesPerPlayer || 3} drives
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Current Hole */}

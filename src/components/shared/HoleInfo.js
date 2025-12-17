@@ -31,7 +31,7 @@ function HoleInfo({
         </div>
         {yardage && (
           <div className="hole-detail-item">
-            <span className="label">Yards</span>
+            <span className="label">Meters</span>
             <span className="value">{yardage}</span>
           </div>
         )}
@@ -47,7 +47,7 @@ HoleInfo.propTypes = {
   par: PropTypes.number.isRequired,
   /** Stroke index / difficulty rating */
   strokeIndex: PropTypes.number.isRequired,
-  /** Distance in yards (optional) */
+  /** Distance in meters (optional) */
   yardage: PropTypes.number,
   /** Hole name (optional) */
   name: PropTypes.string,

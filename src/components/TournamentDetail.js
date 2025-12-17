@@ -1760,7 +1760,7 @@ function TournamentDetail() {
                           </div>
                           <div className="empty-state-step">
                             <strong>3. Set up course</strong>
-                            <span>Configure holes, pars, and yardages</span>
+                            <span>Configure holes, pars, and distances</span>
                           </div>
                           <div className="empty-state-step">
                             <strong>4. Start scoring</strong>
