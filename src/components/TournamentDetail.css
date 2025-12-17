@@ -242,6 +242,66 @@
   padding: 1.5rem;
 }
 
+/* Workflow Guidance Banner */
+.workflow-guidance-banner {
+  margin-bottom: 1.5rem;
+}
+
+.guidance-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  border: 2px solid;
+}
+
+.guidance-item:last-child {
+  margin-bottom: 0;
+}
+
+.guidance-item.warning {
+  background: #fef5e7;
+  border-color: #f39c12;
+  color: #7d6608;
+}
+
+.guidance-item.info {
+  background: #ebf8ff;
+  border-color: #3b82f6;
+  color: #1e40af;
+}
+
+.guidance-item.success {
+  background: #f0fdf4;
+  border-color: #22c55e;
+  color: #15803d;
+}
+
+.guidance-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.guidance-content {
+  flex: 1;
+}
+
+.guidance-content strong {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.guidance-content p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
 .round-details-header {
   display: flex;
   justify-content: space-between;
@@ -1413,13 +1473,17 @@
   gap: 0.5rem;
 }
 
-.button.disabled {
+.button.disabled,
+.button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  pointer-events: none;
 }
 
-.button.disabled:hover {
+.button.disabled:hover,
+.button:disabled:hover {
   transform: none;
+  box-shadow: none;
 }
 
 /* Round Edit Form */
