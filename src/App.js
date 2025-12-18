@@ -108,6 +108,11 @@ function AppHeader() {
             <div className="settings-menu">
               <Link to="/help" onClick={() => setShowSettings(false)}>📖 Help & Guide</Link>
               <Link to="/player-login" onClick={() => setShowSettings(false)}>👤 Player Login</Link>
+              {currentPlayer && (
+                <Link to={`/players/${currentPlayer.id}/statistics`} onClick={() => setShowSettings(false)}>
+                  📊 My Stats
+                </Link>
+              )}
               {isAdmin && (
                 <>
                   <Link to="/courses" onClick={() => setShowSettings(false)}>Course Library</Link>

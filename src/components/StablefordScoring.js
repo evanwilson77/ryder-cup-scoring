@@ -15,7 +15,9 @@ import {
   ScoreCard,
   ScoreEntry,
   LeaderboardSummary,
-  MediaButton
+  MediaButton,
+  HoleInfo,
+  ScorePreview
 } from './shared';
 import './StablefordScoring.css';
 
@@ -256,23 +258,13 @@ function StablefordScoring() {
 
       {/* FIRST: Current Hole Scoring */}
       <div className="hole-scoring">
-        <div className="hole-header">
-          <div className="hole-info">
-            <div className="hole-number-large">Hole {courseHole.number}</div>
-            <div className="hole-details">
-              <span className="hole-par">Par {courseHole.par}</span>
-              <span className="hole-si">SI {courseHole.strokeIndex}</span>
-              {courseHole.yardage && <span className="hole-distance">{courseHole.yardage}m</span>}
-            </div>
-          </div>
-
-          {currentScore && (
-            <div className="hole-points-display">
-              <div className="points-value">{currentScore.points}</div>
-              <div className="points-label">points</div>
-            </div>
-          )}
-        </div>
+        <HoleInfo
+          holeNumber={currentHole + 1}
+          par={courseHole.par}
+          strokeIndex={courseHole.strokeIndex}
+          yardage={courseHole.yardage}
+          currentScore={currentScore}
+        />
 
         {/* Score Input - Using shared ScoreEntry component */}
         <ScoreEntry
@@ -286,21 +278,14 @@ function StablefordScoring() {
           className="stableford-score-entry"
         />
 
-        {/* Stroke Info */}
-        {currentScore && (
-          <div className="stroke-info">
-            <div className="stroke-detail">
-              <span className="stroke-label">Strokes received:</span>
-              <span className="stroke-value">{currentScore.strokesReceived}</span>
-            </div>
-            <div className="stroke-detail">
-              <span className="stroke-label">Net score:</span>
-              <span className="stroke-value">
-                {currentScore.netScore} ({formatScoreToPar(currentScore.scoreToPar)})
-              </span>
-            </div>
-          </div>
-        )}
+        <ScorePreview
+          grossScore={scores[currentHole].grossScore ? parseInt(scores[currentHole].grossScore) : null}
+          netScore={currentScore?.netScore}
+          points={currentScore?.points}
+          par={courseHole.par}
+          format="stableford"
+          strokesReceived={currentScore?.strokesReceived}
+        />
 
         {/* Navigation Buttons */}
         <div className="hole-navigation-buttons">

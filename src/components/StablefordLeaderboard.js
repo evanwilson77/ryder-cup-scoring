@@ -353,7 +353,16 @@ function StablefordLeaderboard() {
                       {getPositionBadge(entry.position)}
                     </div>
                     <div className="player-info">
-                      <div className="player-name">{entry.playerName}</div>
+                      <div
+                        className="player-name clickable"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/players/${entry.playerId}/statistics`);
+                        }}
+                        title="View player statistics"
+                      >
+                        {entry.playerName}
+                      </div>
                       <div className="player-handicap">HCP {entry.playerHandicap.toFixed(1)}</div>
                     </div>
                     <div className="points-display">
@@ -440,7 +449,13 @@ function StablefordLeaderboard() {
                       </td>
                       <td className="player-col">
                         <div className="player-name-cell">
-                          {entry.playerName}
+                          <span
+                            className="player-name-link"
+                            onClick={() => navigate(`/players/${entry.playerId}/statistics`)}
+                            title="View player statistics"
+                          >
+                            {entry.playerName}
+                          </span>
                           {entry.bestRound && entry.roundsCompleted > 1 && (
                             <span className="best-round-badge" title={`Best: ${entry.bestRound.roundName}`}>
                               🔥 {isStableford ? entry.bestRound.points + 'pts' : entry.bestRound.net}

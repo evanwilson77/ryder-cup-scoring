@@ -9,7 +9,7 @@ import {
 } from '../firebase/services';
 import { getTournaments } from '../firebase/tournamentServices';
 import { formatHandicap, validateHandicap, parseHandicap } from '../utils/handicapUtils';
-import { PlusIcon, PencilIcon, TrashIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon, ChartBarIcon, PresentationChartLineIcon } from '@heroicons/react/24/outline';
 
 function PlayerManagement() {
   const navigate = useNavigate();
@@ -208,6 +208,13 @@ function PlayerManagement() {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => navigate(`/players/${player.id}/statistics`)}
+                    className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                    title="View player statistics"
+                  >
+                    <PresentationChartLineIcon className="h-5 w-5" />
+                  </button>
                   <button
                     onClick={() => openHistoryModal(player)}
                     className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"

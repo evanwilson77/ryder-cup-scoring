@@ -11,7 +11,6 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   PencilIcon,
   UserGroupIcon,
-  TrophyIcon,
   TrashIcon,
   ChevronDownIcon,
   ChevronUpIcon
@@ -795,6 +794,53 @@ function TournamentDetail() {
     }
   };
 
+  const handleQuickFormatUpdate = async (roundId, newFormat) => {
+    try {
+      const roundIndex = tournament.rounds.findIndex(r => r.id === roundId);
+      const existingRound = tournament.rounds[roundIndex];
+
+      // Check if format is changing and round has data
+      if (newFormat !== existingRound.format) {
+        const hasData =
+          (existingRound.scorecards?.length > 0) ||
+          (existingRound.teamScorecards?.length > 0) ||
+          (existingRound.matches?.length > 0);
+
+        if (hasData) {
+          const confirmed = window.confirm(
+            'Changing format will clear all scoring configurations (matches/scorecards). Continue?'
+          );
+          if (!confirmed) return;
+        }
+      }
+
+      // Build updates object
+      const updates = {
+        format: newFormat,
+        updatedAt: new Date().toISOString()
+      };
+
+      // Clear format-specific data if format changed
+      if (newFormat !== existingRound.format) {
+        updates.scorecards = [];
+        updates.teamScorecards = [];
+        updates.matches = [];
+      }
+
+      // Update the round
+      const updatedRounds = [...tournament.rounds];
+      updatedRounds[roundIndex] = {
+        ...existingRound,
+        ...updates
+      };
+
+      await updateTournament(tournamentId, { rounds: updatedRounds });
+    } catch (error) {
+      console.error('Error updating format:', error);
+      alert('Failed to update format. Please try again.');
+    }
+  };
+
   if (loading || !tournament) {
     return (
       <div className="tournament-detail">
@@ -884,6 +930,32 @@ function TournamentDetail() {
                   <div className="round-details-header">
                     <h3>{selectedRound.name}</h3>
                     <div className="round-actions">
+                      <div className="format-selector-inline">
+                        <label htmlFor="round-format-select">Format:</label>
+                        <select
+                          id="round-format-select"
+                          className="input small"
+                          value={selectedRound.format || ''}
+                          onChange={(e) => handleQuickFormatUpdate(selectedRound.id, e.target.value || null)}
+                        >
+                          <option value="">Select format...</option>
+                          <optgroup label="Individual Formats">
+                            <option value="individual_stroke">Individual Stroke Play</option>
+                            <option value="individual_stableford">Individual Stableford</option>
+                          </optgroup>
+                          <optgroup label="Match Play Formats">
+                            <option value="match_play_singles">Match Play Singles</option>
+                            <option value="four_ball">Four Ball</option>
+                            <option value="foursomes">Foursomes</option>
+                          </optgroup>
+                          <optgroup label="Team Formats">
+                            <option value="scramble">Scramble</option>
+                            <option value="shamble">Shamble</option>
+                            <option value="best_ball">Best Ball</option>
+                            <option value="team_stableford">Team Stableford</option>
+                          </optgroup>
+                        </select>
+                      </div>
                       <button
                         onClick={() => updateRoundCourse(selectedRound)}
                         className="button secondary small"
@@ -920,79 +992,6 @@ function TournamentDetail() {
                       )}
                     </div>
                   </div>
-
-                  <div className="round-info-grid">
-                    <div className="round-info-item">
-                      <span className="round-info-label">Date:</span>
-                      <span className="round-info-value">
-                        {new Date(selectedRound.date).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="round-info-item">
-                      <span className="round-info-label">Format:</span>
-                      <span className="round-info-value" style={{ textTransform: 'capitalize' }}>
-                        {selectedRound.format ? selectedRound.format.replace(/_/g, ' ') : 'Not set'}
-                      </span>
-                    </div>
-                    <div className="round-info-item">
-                      <span className="round-info-label">Course:</span>
-                      <span className="round-info-value">{selectedRound.courseName}</span>
-                    </div>
-                    <div className="round-info-item">
-                      <span className="round-info-label">Par:</span>
-                      <span className="round-info-value">
-                        {selectedRound.courseData?.totalPar || 'Not set'}
-                      </span>
-                    </div>
-                    <div className="round-info-item">
-                      <span className="round-info-label">Holes Configured:</span>
-                      <span className="round-info-value">
-                        {selectedRound.courseData?.holes?.length || 0} / 18
-                      </span>
-                    </div>
-                  </div>
-
-                  {selectedRound.courseData?.holes?.length > 0 ? (
-                    <div className="holes-table-section">
-                      <button
-                        onClick={() => setHoleConfigExpanded(!holeConfigExpanded)}
-                        className="holes-table-toggle"
-                      >
-                        <h4>Hole Configuration</h4>
-                        {holeConfigExpanded ? (
-                          <ChevronUpIcon className="icon" />
-                        ) : (
-                          <ChevronDownIcon className="icon" />
-                        )}
-                      </button>
-                      {holeConfigExpanded && (
-                        <div className="holes-table">
-                          <table>
-                            <thead>
-                              <tr>
-                                <th>Hole</th>
-                                <th>Par</th>
-                                <th>Stroke Index</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {selectedRound.courseData.holes.map((hole) => (
-                                <tr key={hole.number}>
-                                  <td>{hole.number}</td>
-                                  <td>{hole.par}</td>
-                                  <td>{hole.strokeIndex}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="empty-state">
-                      <p>No course data configured for this round yet. Click "Configure Course" above to set up the holes.</p>
-                    </div>
-                  )}
 
                   {/* Scorecards Section for Individual/Stableford */}
                   {(selectedRound.format === 'individual_stroke' || isStablefordRound(selectedRound)) && selectedRound.scorecards && selectedRound.scorecards.length > 0 && (
@@ -1035,22 +1034,22 @@ function TournamentDetail() {
 
                               <div className="scorecard-scores">
                                 {scorecard.totalGross > 0 && (
-                                  <>
-                                    <div key="gross" className="score-item">
-                                      <span className="score-label">Gross</span>
-                                      <span className="score-value">{scorecard.totalGross}</span>
-                                    </div>
-                                    <div key="net" className="score-item">
-                                      <span className="score-label">Net</span>
-                                      <span className="score-value">{scorecard.totalNet}</span>
-                                    </div>
-                                    {isStablefordRound(selectedRound) && (
-                                      <div key="points" className="score-item">
-                                        <span className="score-label">Points</span>
-                                        <span className="score-value stableford">{scorecard.totalPoints || 0}</span>
-                                      </div>
-                                    )}
-                                  </>
+                                  <div className="score-item">
+                                    <span className="score-label">Gross</span>
+                                    <span className="score-value">{scorecard.totalGross}</span>
+                                  </div>
+                                )}
+                                {scorecard.totalGross > 0 && (
+                                  <div className="score-item">
+                                    <span className="score-label">Net</span>
+                                    <span className="score-value">{scorecard.totalNet}</span>
+                                  </div>
+                                )}
+                                {scorecard.totalGross > 0 && isStablefordRound(selectedRound) && (
+                                  <div className="score-item">
+                                    <span className="score-label">Points</span>
+                                    <span className="score-value stableford">{scorecard.totalPoints || 0}</span>
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -1208,28 +1207,101 @@ function TournamentDetail() {
 
                               <div className="scorecard-scores">
                                 {teamScorecard.totalGross > 0 && (
-                                  <>
-                                    <div key="gross" className="score-item">
-                                      <span className="score-label">Gross</span>
-                                      <span className="score-value">{teamScorecard.totalGross}</span>
-                                    </div>
-                                    <div key="net" className="score-item">
-                                      <span className="score-label">Net</span>
-                                      <span className="score-value">{teamScorecard.totalNet}</span>
-                                    </div>
-                                    {selectedRound.format === 'team_stableford' && (
-                                      <div key="points" className="score-item">
-                                        <span className="score-label">Points</span>
-                                        <span className="score-value stableford">{teamScorecard.totalPoints || 0}</span>
-                                      </div>
-                                    )}
-                                  </>
+                                  <div className="score-item">
+                                    <span className="score-label">Gross</span>
+                                    <span className="score-value">{teamScorecard.totalGross}</span>
+                                  </div>
+                                )}
+                                {teamScorecard.totalGross > 0 && (
+                                  <div className="score-item">
+                                    <span className="score-label">Net</span>
+                                    <span className="score-value">{teamScorecard.totalNet}</span>
+                                  </div>
+                                )}
+                                {teamScorecard.totalGross > 0 && selectedRound.format === 'team_stableford' && (
+                                  <div className="score-item">
+                                    <span className="score-label">Points</span>
+                                    <span className="score-value stableford">{teamScorecard.totalPoints || 0}</span>
+                                  </div>
                                 )}
                               </div>
                             </div>
                           );
                         })}
                       </div>
+                    </div>
+                  )}
+
+                  <div className="round-info-grid">
+                    <div className="round-info-item">
+                      <span className="round-info-label">Date:</span>
+                      <span className="round-info-value">
+                        {new Date(selectedRound.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="round-info-item">
+                      <span className="round-info-label">Format:</span>
+                      <span className="round-info-value" style={{ textTransform: 'capitalize' }}>
+                        {selectedRound.format ? selectedRound.format.replace(/_/g, ' ') : 'Not set'}
+                      </span>
+                    </div>
+                    <div className="round-info-item">
+                      <span className="round-info-label">Course:</span>
+                      <span className="round-info-value">{selectedRound.courseName}</span>
+                    </div>
+                    <div className="round-info-item">
+                      <span className="round-info-label">Par:</span>
+                      <span className="round-info-value">
+                        {selectedRound.courseData?.totalPar || 'Not set'}
+                      </span>
+                    </div>
+                    <div className="round-info-item">
+                      <span className="round-info-label">Holes Configured:</span>
+                      <span className="round-info-value">
+                        {selectedRound.courseData?.holes?.length || 0} / 18
+                      </span>
+                    </div>
+                  </div>
+
+                  {selectedRound.courseData?.holes?.length > 0 ? (
+                    <div className="holes-table-section">
+                      <button
+                        onClick={() => setHoleConfigExpanded(!holeConfigExpanded)}
+                        className="holes-table-toggle"
+                      >
+                        <h4>Hole Configuration</h4>
+                        {holeConfigExpanded ? (
+                          <ChevronUpIcon className="icon" />
+                        ) : (
+                          <ChevronDownIcon className="icon" />
+                        )}
+                      </button>
+                      {holeConfigExpanded && (
+                        <div className="holes-table">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Hole</th>
+                                <th>Par</th>
+                                <th>Stroke Index</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {selectedRound.courseData.holes.map((hole) => (
+                                <tr key={hole.number}>
+                                  <td>{hole.number}</td>
+                                  <td>{hole.par}</td>
+                                  <td>{hole.strokeIndex}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="empty-state">
+                      <p>No course data configured for this round yet. Click "Configure Course" above to set up the holes.</p>
                     </div>
                   )}
                 </div>

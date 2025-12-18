@@ -139,6 +139,33 @@ All scoring screens MUST use these shared components:
 - `useScoreEntry` - Increment/decrement logic starting at par
 - `useHoleNavigation` - Hole-by-hole navigation state
 
+### Cross-Format Consistency (CRITICAL)
+
+**CRITICAL RULE**: When making ANY change to a scoring component, you MUST evaluate whether that change applies to other formats and update them accordingly.
+
+**Format Groupings:**
+- **Team Stroke Play**: ScrambleScoring, ShambleScoring, BestBallScoring (should be nearly identical)
+- **Individual Formats**: ScorecardScoring, StablefordScoring (should be nearly identical)
+- **Match Play**: Scoring.js (unique structure)
+
+**Required Process:**
+1. Identify which format group the change affects
+2. Apply the change to ALL formats in that group
+3. Test each format to verify consistency
+4. Document any format-specific exceptions
+
+**Examples of changes requiring cross-format evaluation:**
+- Layout/CSS modifications (spacing, sizing, mobile responsiveness)
+- Shared component updates (ScoreCard, ScoreEntry, AutoSaveIndicator)
+- Score display changes (gross/net/points formatting)
+- Navigation behavior (Previous/Next buttons, hole navigation)
+- Auto-save behavior and indicators
+- Section additions or removals
+
+**The user should NEVER have to test all formats individually for a single change.**
+
+**See**: `SCORING_FORMATS_CHECKLIST.md` for complete cross-format consistency requirements
+
 **Architecture Rule**: DO NOT create custom scorecard tables or +/- buttons. Use shared components.
 
 **See**: `COMPONENT_ARCHITECTURE.md` for details
@@ -396,6 +423,7 @@ For deeper dives into specific topics, see:
 - **TOURNAMENT_DATA_MODEL.md** - Complete database schema
 - **ARCHITECTURE_NOTES.md** - Critical architecture principles and examples
 - **COMPONENT_ARCHITECTURE.md** - Shared component requirements
+- **SCORING_FORMATS_CHECKLIST.md** - Cross-format consistency requirements (CRITICAL)
 - **TESTING_QUICK_REFERENCE.md** - Testing commands and examples
 - **PLAYER_DATABASE.md** - Player data structure and handicap system
 - **GIT_WORKFLOW.md** - Comprehensive Git commands and workflows

@@ -181,3 +181,157 @@ export const calculateHoleDifficulty = (tournament) => {
     }))
     .sort((a, b) => b.difficulty - a.difficulty);
 };
+
+/**
+ * Calculate par-specific performance statistics
+ * @param {string} playerId - Player ID
+ * @param {Array} tournaments - Array of tournament objects
+ * @returns {Object} Par-specific statistics
+ */
+export const calculateParPerformance = (playerId, tournaments) => {
+  const parStats = {
+    par3: { totalScore: 0, holes: 0, eagles: 0, birdies: 0, pars: 0, bogeys: 0, doublePlus: 0 },
+    par4: { totalScore: 0, holes: 0, eagles: 0, birdies: 0, pars: 0, bogeys: 0, doublePlus: 0 },
+    par5: { totalScore: 0, holes: 0, eagles: 0, birdies: 0, pars: 0, bogeys: 0, doublePlus: 0 }
+  };
+
+  tournaments.forEach(tournament => {
+    tournament.rounds?.forEach(round => {
+      const scorecard = round.scorecards?.find(sc => sc.playerId === playerId);
+      if (scorecard && scorecard.status === 'completed') {
+        scorecard.holes?.forEach((hole, idx) => {
+          const holePar = round.courseData?.holes?.[idx]?.par;
+          if (!holePar || !hole.grossScore) return;
+
+          const parKey = `par${holePar}`;
+          if (!parStats[parKey]) return;
+
+          parStats[parKey].totalScore += hole.grossScore;
+          parStats[parKey].holes++;
+
+          const diff = hole.grossScore - holePar;
+          if (diff <= -2) parStats[parKey].eagles++;
+          else if (diff === -1) parStats[parKey].birdies++;
+          else if (diff === 0) parStats[parKey].pars++;
+          else if (diff === 1) parStats[parKey].bogeys++;
+          else if (diff >= 2) parStats[parKey].doublePlus++;
+        });
+      }
+    });
+  });
+
+  return {
+    par3: {
+      ...parStats.par3,
+      average: parStats.par3.holes > 0 ? (parStats.par3.totalScore / parStats.par3.holes).toFixed(2) : 0,
+      birdieRate: parStats.par3.holes > 0 ? ((parStats.par3.birdies / parStats.par3.holes) * 100).toFixed(1) : 0,
+      parRate: parStats.par3.holes > 0 ? ((parStats.par3.pars / parStats.par3.holes) * 100).toFixed(1) : 0
+    },
+    par4: {
+      ...parStats.par4,
+      average: parStats.par4.holes > 0 ? (parStats.par4.totalScore / parStats.par4.holes).toFixed(2) : 0,
+      birdieRate: parStats.par4.holes > 0 ? ((parStats.par4.birdies / parStats.par4.holes) * 100).toFixed(1) : 0,
+      parRate: parStats.par4.holes > 0 ? ((parStats.par4.pars / parStats.par4.holes) * 100).toFixed(1) : 0
+    },
+    par5: {
+      ...parStats.par5,
+      average: parStats.par5.holes > 0 ? (parStats.par5.totalScore / parStats.par5.holes).toFixed(2) : 0,
+      eagleRate: parStats.par5.holes > 0 ? ((parStats.par5.eagles / parStats.par5.holes) * 100).toFixed(1) : 0,
+      birdieRate: parStats.par5.holes > 0 ? ((parStats.par5.birdies / parStats.par5.holes) * 100).toFixed(1) : 0,
+      parRate: parStats.par5.holes > 0 ? ((parStats.par5.pars / parStats.par5.holes) * 100).toFixed(1) : 0
+    }
+  };
+};
+
+/**
+ * Calculate series-specific statistics
+ * @param {string} playerId - Player ID
+ * @param {Array} tournaments - Array of tournament objects
+ * @param {Array} series - Array of series objects
+ * @returns {Array} Series-specific statistics
+ */
+export const calculateSeriesStatistics = (playerId, tournaments, series) => {
+  const seriesStats = {};
+
+  // Initialize stats for each series
+  series.forEach(s => {
+    seriesStats[s.id] = {
+      seriesId: s.id,
+      seriesName: s.name,
+      roundsPlayed: 0,
+      roundsCompleted: 0,
+      bestGross: Infinity,
+      bestNet: Infinity,
+      averageGross: 0,
+      averageNet: 0,
+      totalGross: 0,
+      totalNet: 0,
+      wins: 0,
+      runnersUp: 0,
+      thirdPlace: 0
+    };
+  });
+
+  // Add "No Series" category
+  seriesStats.none = {
+    seriesId: 'none',
+    seriesName: 'No Series',
+    roundsPlayed: 0,
+    roundsCompleted: 0,
+    bestGross: Infinity,
+    bestNet: Infinity,
+    averageGross: 0,
+    averageNet: 0,
+    totalGross: 0,
+    totalNet: 0,
+    wins: 0,
+    runnersUp: 0,
+    thirdPlace: 0
+  };
+
+  tournaments.forEach(tournament => {
+    const seriesId = tournament.seriesId || 'none';
+    if (!seriesStats[seriesId]) return;
+
+    const stats = seriesStats[seriesId];
+
+    // Check for wins (simplified - would need proper leaderboard calculation)
+    if (tournament.status === 'completed' && tournament.winner === playerId) {
+      stats.wins++;
+    }
+
+    tournament.rounds?.forEach(round => {
+      const scorecard = round.scorecards?.find(sc => sc.playerId === playerId);
+      if (scorecard) {
+        stats.roundsPlayed++;
+        if (scorecard.status === 'completed') {
+          stats.roundsCompleted++;
+          stats.totalGross += scorecard.totalGross || 0;
+          stats.totalNet += scorecard.totalNet || 0;
+
+          if (scorecard.totalGross < stats.bestGross) {
+            stats.bestGross = scorecard.totalGross;
+          }
+          if (scorecard.totalNet < stats.bestNet) {
+            stats.bestNet = scorecard.totalNet;
+          }
+        }
+      }
+    });
+
+    if (stats.roundsCompleted > 0) {
+      stats.averageGross = (stats.totalGross / stats.roundsCompleted).toFixed(1);
+      stats.averageNet = (stats.totalNet / stats.roundsCompleted).toFixed(1);
+    }
+  });
+
+  // Convert to array and filter out series with no data
+  return Object.values(seriesStats)
+    .filter(stats => stats.roundsPlayed > 0)
+    .map(stats => ({
+      ...stats,
+      bestGross: stats.bestGross !== Infinity ? stats.bestGross : null,
+      bestNet: stats.bestNet !== Infinity ? stats.bestNet : null
+    }))
+    .sort((a, b) => b.roundsPlayed - a.roundsPlayed);
+};
