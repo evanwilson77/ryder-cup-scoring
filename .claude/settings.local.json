@@ -33,7 +33,13 @@
       "Bash(git commit:*)",
       "Bash(cloc:*)",
       "Bash(find:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(git restore:*)",
+      "Bash(npm audit:*)",
+      "Bash(timeout /t 5)",
+      "Bash(ping:*)",
+      "Bash(git -C C:\\ai\\RyderCup restore:*)",
+      "Bash(npx kill-port 3000)"
     ],
     "deny": [],
     "ask": []

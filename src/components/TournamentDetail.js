@@ -252,6 +252,51 @@ function TournamentDetail() {
     }
   };
 
+  // Compute round status dynamically based on scorecard/match status
+  const getRoundStatus = (round) => {
+    // Check individual scorecards
+    if (round.scorecards && round.scorecards.length > 0) {
+      const allCompleted = round.scorecards.every(sc => sc.status === 'completed');
+      const anyInProgress = round.scorecards.some(sc => sc.status === 'in_progress' || sc.holes?.some(h => h.grossScore !== null));
+
+      if (allCompleted) return 'completed';
+      if (anyInProgress) return 'in_progress';
+      return 'setup'; // Scorecards exist but not started
+    }
+
+    // Check team scorecards
+    if (round.teamScorecards && round.teamScorecards.length > 0) {
+      const allCompleted = round.teamScorecards.every(sc => sc.status === 'completed');
+      const anyInProgress = round.teamScorecards.some(sc => {
+        if (sc.status === 'in_progress') return true;
+        // Check if any player has scored
+        if (sc.playerScores) {
+          return Object.values(sc.playerScores).some(playerHoles =>
+            playerHoles.some(hole => hole?.grossScore !== null)
+          );
+        }
+        return false;
+      });
+
+      if (allCompleted) return 'completed';
+      if (anyInProgress) return 'in_progress';
+      return 'setup';
+    }
+
+    // Check matches
+    if (round.matches && round.matches.length > 0) {
+      const allCompleted = round.matches.every(m => m.status === 'completed');
+      const anyInProgress = round.matches.some(m => m.status === 'in_progress' || m.currentHole > 1);
+
+      if (allCompleted) return 'completed';
+      if (anyInProgress) return 'in_progress';
+      return 'setup';
+    }
+
+    // No scorecards or matches - use stored status or default to setup
+    return round.status || 'setup';
+  };
+
   const getStatusBadge = (status) => {
     const badges = {
       setup: { className: 'status-badge-setup', label: 'Setup' },
@@ -912,8 +957,8 @@ function TournamentDetail() {
                   >
                     <div className="round-item-header">
                       <div className="round-number">Round {round.roundNumber}</div>
-                      <span className={`status-badge ${getStatusBadge(round.status).className}`}>
-                        {getStatusBadge(round.status).label}
+                      <span className={`status-badge ${getStatusBadge(getRoundStatus(round)).className}`}>
+                        {getStatusBadge(getRoundStatus(round)).label}
                       </span>
                     </div>
                     <div className="round-item-name">{round.name}</div>
@@ -929,71 +974,9 @@ function TournamentDetail() {
                 <div className="round-details">
                   <div className="round-details-header">
                     <h3>{selectedRound.name}</h3>
-                    <div className="round-actions">
-                      <div className="format-selector-inline">
-                        <label htmlFor="round-format-select">Format:</label>
-                        <select
-                          id="round-format-select"
-                          className="input small"
-                          value={selectedRound.format || ''}
-                          onChange={(e) => handleQuickFormatUpdate(selectedRound.id, e.target.value || null)}
-                        >
-                          <option value="">Select format...</option>
-                          <optgroup label="Individual Formats">
-                            <option value="individual_stroke">Individual Stroke Play</option>
-                            <option value="individual_stableford">Individual Stableford</option>
-                          </optgroup>
-                          <optgroup label="Match Play Formats">
-                            <option value="match_play_singles">Match Play Singles</option>
-                            <option value="four_ball">Four Ball</option>
-                            <option value="foursomes">Foursomes</option>
-                          </optgroup>
-                          <optgroup label="Team Formats">
-                            <option value="scramble">Scramble</option>
-                            <option value="shamble">Shamble</option>
-                            <option value="best_ball">Best Ball</option>
-                            <option value="team_stableford">Team Stableford</option>
-                          </optgroup>
-                        </select>
-                      </div>
-                      <button
-                        onClick={() => updateRoundCourse(selectedRound)}
-                        className="button secondary small"
-                      >
-                        <PencilIcon className="icon" />
-                        Configure Course
-                      </button>
-                      {(selectedRound.format === 'match_play_singles' || selectedRound.format === 'four_ball' || selectedRound.format === 'foursomes') && (
-                        <button
-                          onClick={() => openMatchSetup(selectedRound)}
-                          className="button secondary small"
-                        >
-                          <UserGroupIcon className="icon" />
-                          Setup Matches
-                        </button>
-                      )}
-                      {(selectedRound.format === 'individual_stroke' || selectedRound.format === 'individual_stableford') && (
-                        <button
-                          onClick={() => openScorecardSetup(selectedRound)}
-                          className="button secondary small"
-                        >
-                          <UserGroupIcon className="icon" />
-                          Setup Scorecards
-                        </button>
-                      )}
-                      {isTeamScorecardFormat(selectedRound) && (
-                        <button
-                          onClick={() => openTeamScorecardSetup(selectedRound)}
-                          className="button secondary small"
-                        >
-                          <UserGroupIcon className="icon" />
-                          Setup Team Scorecards
-                        </button>
-                      )}
-                    </div>
                   </div>
 
-                  {/* Scorecards Section for Individual/Stableford */}
+                  {/* Scorecards Section for Individual/Stableford - MOVED BEFORE BUTTONS */}
                   {(selectedRound.format === 'individual_stroke' || isStablefordRound(selectedRound)) && selectedRound.scorecards && selectedRound.scorecards.length > 0 && (
                     <div className="scorecards-section">
                       <h4>Scorecards ({selectedRound.scorecards.length})</h4>
@@ -1059,7 +1042,7 @@ function TournamentDetail() {
                     </div>
                   )}
 
-                  {/* Matches Section for Match Play Formats */}
+                  {/* Matches Section for Match Play Formats - MOVED BEFORE BUTTONS */}
                   {(selectedRound.format === 'match_play_singles' || selectedRound.format === 'four_ball' || selectedRound.format === 'foursomes') && selectedRound.matches && selectedRound.matches.length > 0 && (
                     <div className="scorecards-section">
                       <h4>Matches ({selectedRound.matches.length})</h4>
@@ -1135,7 +1118,7 @@ function TournamentDetail() {
                     </div>
                   )}
 
-                  {/* Team Scorecards Section for Team Formats */}
+                  {/* Team Scorecards Section for Team Formats - MOVED BEFORE BUTTONS */}
                   {isTeamScorecardFormat(selectedRound) && selectedRound.teamScorecards && selectedRound.teamScorecards.length > 0 && (
                     <div className="scorecards-section">
                       <h4>Team Scorecards ({selectedRound.teamScorecards.length})</h4>
@@ -1231,6 +1214,71 @@ function TournamentDetail() {
                       </div>
                     </div>
                   )}
+
+                  {/* ROUND ACTIONS - NOW AFTER SCORECARDS */}
+                  <div className="round-actions">
+                      <div className="format-selector-inline">
+                        <label htmlFor="round-format-select">Format:</label>
+                        <select
+                          id="round-format-select"
+                          className="input small"
+                          value={selectedRound.format || ''}
+                          onChange={(e) => handleQuickFormatUpdate(selectedRound.id, e.target.value || null)}
+                        >
+                          <option value="">Select format...</option>
+                          <optgroup label="Individual Formats">
+                            <option value="individual_stroke">Individual Stroke Play</option>
+                            <option value="individual_stableford">Individual Stableford</option>
+                          </optgroup>
+                          <optgroup label="Match Play Formats">
+                            <option value="match_play_singles">Match Play Singles</option>
+                            <option value="four_ball">Four Ball</option>
+                            <option value="foursomes">Foursomes</option>
+                          </optgroup>
+                          <optgroup label="Team Formats">
+                            <option value="scramble">Scramble</option>
+                            <option value="shamble">Shamble</option>
+                            <option value="best_ball">Best Ball</option>
+                            <option value="team_stableford">Team Stableford</option>
+                          </optgroup>
+                        </select>
+                      </div>
+                      <button
+                        onClick={() => updateRoundCourse(selectedRound)}
+                        className="button secondary small"
+                      >
+                        <PencilIcon className="icon" />
+                        Configure Course
+                      </button>
+                      {(selectedRound.format === 'match_play_singles' || selectedRound.format === 'four_ball' || selectedRound.format === 'foursomes') && (
+                        <button
+                          onClick={() => openMatchSetup(selectedRound)}
+                          className="button secondary small"
+                        >
+                          <UserGroupIcon className="icon" />
+                          Setup Matches
+                        </button>
+                      )}
+                      {(selectedRound.format === 'individual_stroke' || selectedRound.format === 'individual_stableford') && (
+                        <button
+                          onClick={() => openScorecardSetup(selectedRound)}
+                          className="button secondary small"
+                        >
+                          <UserGroupIcon className="icon" />
+                          Setup Scorecards
+                        </button>
+                      )}
+                      {isTeamScorecardFormat(selectedRound) && (
+                        <button
+                          onClick={() => openTeamScorecardSetup(selectedRound)}
+                          className="button secondary small"
+                        >
+                          <UserGroupIcon className="icon" />
+                          Setup Team Scorecards
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
                   <div className="round-info-grid">
                     <div className="round-info-item">
@@ -1584,8 +1632,9 @@ function TournamentDetail() {
                       .map((round, index) => {
                         const isExpanded = expandedRounds.has(round.id);
                         const hasScores = !canDeleteRound(round);
-                        const statusBadge = round.status === 'completed' ? '✓' :
-                                          round.status === 'in_progress' ? '▶' : '○';
+                        const roundStatus = getRoundStatus(round);
+                        const statusBadge = roundStatus === 'completed' ? '✓' :
+                                          roundStatus === 'in_progress' ? '▶' : '○';
 
                         return (
                           <div key={round.id} className={`round-item ${isExpanded ? 'expanded' : ''}`}>
@@ -1728,8 +1777,8 @@ function TournamentDetail() {
                                     </div>
                                     <div className="round-detail-row">
                                       <label>Status:</label>
-                                      <span className={`status-badge status-${round.status}`}>
-                                        {round.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                      <span className={`status-badge status-${roundStatus}`}>
+                                        {roundStatus.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                       </span>
                                     </div>
                                     <div className="round-detail-row">
